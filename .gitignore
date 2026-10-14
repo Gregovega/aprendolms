@@ -1,0 +1,41 @@
+# ===== SECRETOS: nunca subir =====
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# ===== Credenciales y reportes locales =====
+_tools/.credentials-backup/
+_tools/*.log
+acl-report-*.jsonl
+acl-backup-*.json
+
+# ===== Node =====
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+.npm/
+.pnpm-store/
+
+# ===== Build / temporales =====
+dist/
+build/
+.cache/
+*.tmp
+~$*
+
+# ===== Sistema operativo =====
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ===== Editores =====
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+
+# ===== NO ignorar (el frontend SÍ necesita su config pública) =====
+!assets/js/config.js
+!config/supabase.config.js
