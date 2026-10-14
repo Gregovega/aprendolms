@@ -99,12 +99,43 @@ function Get-GitExe {
     if (Test-Path $alt) { return $alt }
     return $null
 }
+<#
+  Invoke-Git: ejecuta git sin que su salida por stderr rompa el script.
+
+  POR QUE HACE FALTA (era un fallo real):
+  En PowerShell 5.1, con $ErrorActionPreference = 'Stop', CUALQUIER linea que un
+  programa externo escriba por stderr se convierte en un error terminante
+  "NativeCommandError". Y git escribe por stderr en casos completamente NORMALES:
+
+      git fetch   ->  "From https://github.com/usuario/repo"
+      git push    ->  la barra de progreso ("Writing objects: 45% ...")
+
+  Resultado: el script moria justo antes de subir nada, con un error rojo que
+  parecia un problema de credenciales cuando el token estaba perfecto.
+
+  Aqui se baja la preferencia a 'Continue' solo mientras corre git, y el resultado
+  real se comprueba con $LASTEXITCODE, que es la forma correcta de hacerlo.
+#>
 $git = Get-GitExe
 if (-not $git) {
     Write-Bad 'No encuentro git. Abre una terminal NUEVA (para que tome el PATH) o reinstala con _tools\set-credentials.cmd.'
     exit 1
 }
-Write-Ok "git: $(& $git --version)"
+function Invoke-Git {
+    param([string[]]$Argumentos)
+    $previo = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $salida = & $git -C $Root @Argumentos 2>&1
+        $codigo = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previo
+    }
+    return [pscustomobject]@{ Codigo = $codigo; Salida = @($salida) }
+}
+
+$versionGit = ((Invoke-Git @('--version')).Salida | Select-Object -First 1)
+Write-Ok "git: $versionGit"
 
 # ---------------------------------------------------------------- 1. validar el token
 Write-Head 'Paso 1 - Comprobar el token contra GitHub'
@@ -136,11 +167,12 @@ try {
 
 # ---------------------------------------------------------------- 2. commit local
 Write-Head 'Paso 2 - Preparar el commit local'
-& $git -C $Root add -A
-$pending = & $git -C $Root status --porcelain
+Invoke-Git @('add', '-A') | Out-Null
+$pending = (Invoke-Git @('status', '--porcelain')).Salida
 if ($pending) {
     if (-not $Mensaje) { $Mensaje = "Actualizar proyecto ($(Get-Date -Format 'yyyy-MM-dd HH:mm'))" }
-    & $git -C $Root -c user.name="$user" -c user.email="$user@users.noreply.github.com" commit -q -m $Mensaje
+    Invoke-Git @('-c', "user.name=$user", '-c', "user.email=$user@users.noreply.github.com",
+                 'commit', '-q', '-m', $Mensaje) | Out-Null
     Write-Ok "Commit creado: $Mensaje"
     $pending | ForEach-Object { Write-Info "  $_" }
 } else {
@@ -148,7 +180,7 @@ if ($pending) {
 }
 
 # Verificacion de seguridad antes de publicar
-$tracked = & $git -C $Root ls-files
+$tracked = (Invoke-Git @('ls-files')).Salida
 if ($tracked -contains '.env') { Write-Bad 'ABORTADO: .env esta rastreado por git. Tus secretos se publicarian. Revisa .gitignore.'; exit 1 }
 Write-Ok '.env no esta rastreado (seguro para publicar).'
 
@@ -156,17 +188,23 @@ Write-Ok '.env no esta rastreado (seguro para publicar).'
 Write-Head 'Paso 3 - Subir a GitHub'
 $b64 = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("${user}:${token}"))
 
-& $git -C $Root remote remove origin 2>$null | Out-Null
-& $git -C $Root remote add origin "https://github.com/$repo.git"
+Invoke-Git @('remote', 'remove', 'origin') | Out-Null
+Invoke-Git @('remote', 'add', 'origin', "https://github.com/$repo.git") | Out-Null
 Write-Info "origin = https://github.com/$repo.git  (sin token incrustado)"
 
 # Traer por si el remoto avanzo, y avisar si hay que reconciliar
-& $git -C $Root fetch origin $branch 2>&1 | Out-Null
-$local  = & $git -C $Root rev-parse HEAD
-$remote = & $git -C $Root rev-parse "origin/$branch" 2>$null
+$fetch = Invoke-Git @('fetch', '--quiet', 'origin', $branch)
+if ($fetch.Codigo -ne 0) {
+    Write-Bad "No se pudo consultar el remoto (codigo $($fetch.Codigo))."
+    $fetch.Salida | Select-Object -First 6 | ForEach-Object { Write-Info "  $_" }
+    exit 1
+}
+$local  = ((Invoke-Git @('rev-parse', 'HEAD')).Salida | Select-Object -First 1)
+$revRem = Invoke-Git @('rev-parse', "origin/$branch")
+$remote = if ($revRem.Codigo -eq 0) { $revRem.Salida | Select-Object -First 1 } else { $null }
 if ($remote) {
-    & $git -C $Root merge-base --is-ancestor $remote $local
-    if ($LASTEXITCODE -ne 0) {
+    $ancestro = Invoke-Git @('merge-base', '--is-ancestor', $remote, $local)
+    if ($ancestro.Codigo -ne 0) {
         Write-Bad 'El remoto tiene cambios que tu copia local no tiene. NO hago force-push para no borrar nada.'
         Write-Info "Solucion: ejecuta  git pull --rebase origin $branch  y vuelve a lanzar este script."
         exit 1
@@ -175,13 +213,18 @@ if ($remote) {
 }
 
 # El token va en una cabecera temporal: NO se guarda en .git/config
-& $git -C $Root -c "http.extraheader=AUTHORIZATION: basic $b64" push -u origin $branch 2>&1 | ForEach-Object { Write-Info "  $_" }
+$push = Invoke-Git @('-c', "http.extraheader=AUTHORIZATION: basic $b64", 'push', '-u', 'origin', $branch)
+$push.Salida | Where-Object { "$_".Trim() } | ForEach-Object { Write-Info "  $_" }
 
-if ($LASTEXITCODE -ne 0) { Write-Bad "El push fallo (codigo $LASTEXITCODE)."; exit 1 }
+if ($push.Codigo -ne 0) {
+    Write-Bad "El push fallo (codigo $($push.Codigo))."
+    Write-Info 'Causas tipicas: el token no incluye ESTE repositorio, o le falta Contents: Read and write.'
+    exit 1
+}
 
 Write-Head 'Listo'
 Write-Ok "Publicado en https://github.com/$repo"
-Write-Info "Commits subidos: $(& $git -C $Root rev-list --count origin/$branch 2>$null)"
+Write-Info "Commits en el remoto: $(((Invoke-Git @('rev-list', '--count', "origin/$branch")).Salida | Select-Object -First 1))"
 Write-Info "Sitio (cuando haya index.html): https://$user.github.io/$(($repo -split '/')[1])/"
 Write-Host ''
 exit 0
