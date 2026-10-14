@@ -2462,6 +2462,136 @@
   }
 
   /* ============================================================
+     ADMINISTRADORES
+     ============================================================
+     Dos listas distintas, y conviene no confundirlas:
+
+       - los que YA administran (tienen cuenta y permiso)
+       - los correos invitados que todavía no se han registrado
+
+     Al invitar, el servidor comprueba si ese correo ya tiene cuenta: si la tiene,
+     se le da el permiso en el acto; si no, entra solo en cuanto se registre.
+     ------------------------------------------------------------------------ */
+
+  async function cargarAdmins() {
+    var zona = document.getElementById('zona-admins');
+    if (!zona) return;
+    zona.innerHTML = '<span class="text-faint text-sm">Cargando…</span>';
+
+    try {
+      var res = await Promise.all([A.db.administradores(), A.db.adminsInvitados()]);
+      var sesion = await A.auth.sesion();
+      pintarAdmins(res[0] || [], res[1] || [], sesion ? sesion.user.id : null);
+    } catch (e) {
+      zona.innerHTML = '<div class="alert alert-danger"><span class="alert-icon">&#9888;</span>' +
+        '<div class="alert-body">No se pudo cargar la lista: ' + h(A.traducirError(e)) + '</div></div>';
+    }
+  }
+
+  function pintarAdmins(admins, invitados, miId) {
+    var zona = document.getElementById('zona-admins');
+    if (!zona) return;
+
+    // Los invitados que ya tienen cuenta salen en la lista de arriba, así que no
+    // se repiten abajo. Se comparan por correo en minúsculas.
+    var yaDentro = {};
+    admins.forEach(function (a) {
+      var e = a.perfiles && a.perfiles.email;
+      if (e) yaDentro[String(e).toLowerCase()] = true;
+    });
+    var pendientes = invitados.filter(function (i) {
+      return !yaDentro[String(i.email).toLowerCase()];
+    });
+
+    var listaAdmins = admins.map(function (a) {
+      var p = a.perfiles || {};
+      var nombre = p.nombre_completo || p.email || 'Sin nombre';
+      var soyYo = miId && a.user_id === miId;
+
+      // El servidor no deja quitarte el permiso a ti mismo (te quedarías fuera de
+      // tu propia academia), así que el botón no se ofrece siquiera.
+      return '<div class="row-between pago-campo">' +
+        '<span style="flex:1 1 auto;min-width:0">' +
+        '<strong>' + h(nombre) + '</strong>' +
+        (p.email ? '<br><span class="text-faint text-xs">' + h(p.email) + '</span>' : '') +
+        '</span>' +
+        (soyYo
+          ? '<span class="badge badge-ok">Tú</span>'
+          : '<button class="btn btn-ghost btn-sm" type="button" data-quitar-admin="' + h(a.user_id) + '" ' +
+            'data-nombre="' + h(nombre) + '">Quitar</button>') +
+        '</div>';
+    }).join('');
+
+    var listaPendientes = pendientes.map(function (i) {
+      return '<div class="row-between pago-campo">' +
+        '<span style="flex:1 1 auto;min-width:0">' +
+        '<strong>' + h(i.email) + '</strong>' +
+        (i.nota ? '<br><span class="text-faint text-xs">' + h(i.nota) + '</span>' : '') +
+        '</span>' +
+        '<span class="badge badge-warn">Invitado, sin registrarse</span>' +
+        '</div>';
+    }).join('');
+
+    zona.innerHTML =
+      '<div class="label mb-2">Ya administran (' + admins.length + ')</div>' +
+      (listaAdmins || '<p class="text-faint text-sm">Nadie.</p>') +
+      '<div class="label mt-4 mb-2">Invitados esperando a registrarse (' + pendientes.length + ')</div>' +
+      (listaPendientes ||
+        '<p class="text-faint text-sm">Ninguno. Todos los invitados ya tienen cuenta.</p>');
+  }
+
+  async function invitarAdmin() {
+    var inpEmail = document.getElementById('adm-email');
+    var inpNota = document.getElementById('adm-nota');
+    var btn = document.getElementById('btn-invitar-admin');
+    if (!inpEmail) return;
+
+    var email = inpEmail.value.trim().toLowerCase();
+    if (!email) { A.aviso('Escribe el correo de la persona que quieres invitar.', 'warn'); inpEmail.focus(); return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      A.aviso('Ese correo no parece una dirección válida.', 'warn');
+      inpEmail.focus();
+      return;
+    }
+
+    A.cargando(true, 'Invitando…');
+    if (btn) btn.disabled = true;
+    try {
+      var r = await A.db.invitarAdmin(email, inpNota ? inpNota.value.trim() : '');
+      A.aviso(r && r.ya_tenia_cuenta
+        ? 'Listo: ' + email + ' ya tenía cuenta, así que es administrador desde ahora mismo.'
+        : 'Invitado. ' + email + ' será administrador en cuanto se registre en la web.', 'ok', 10000);
+      inpEmail.value = '';
+      if (inpNota) inpNota.value = '';
+      await cargarAdmins();
+      await cargarPanel();
+    } catch (e) {
+      A.aviso('No se pudo invitar: ' + A.traducirError(e), 'error');
+    } finally {
+      A.cargando(false);
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  async function quitarAdmin(userId, nombre) {
+    if (!window.confirm(
+      '¿Quitarle el permiso de administrador a ' + nombre + '?\n\n' +
+      'Dejará de ver este panel y los cobros. Su cuenta de alumno no se borra.')) return;
+
+    A.cargando(true, 'Quitando el permiso…');
+    try {
+      await A.db.quitarAdmin(userId);
+      A.aviso('Permiso de administrador retirado.', 'ok');
+      await cargarAdmins();
+      await cargarPanel();
+    } catch (e) {
+      A.aviso('No se pudo quitar: ' + A.traducirError(e), 'error');
+    } finally {
+      A.cargando(false);
+    }
+  }
+
+  /* ============================================================
      ARRANQUE
      ============================================================ */
 
@@ -2484,6 +2614,26 @@
     if (firma) firma.addEventListener('input', function () { actualizarPreview('prev-firma', firma.value); });
     var logo = document.getElementById('aj-logo');
     if (logo) logo.addEventListener('input', function () { actualizarPreview('prev-logo', logo.value); });
+
+    var btnInvitar = document.getElementById('btn-invitar-admin');
+    if (btnInvitar) btnInvitar.addEventListener('click', invitarAdmin);
+
+    // Enter en el correo invita, para no tener que bajar al botón
+    var inpEmail = document.getElementById('adm-email');
+    if (inpEmail) {
+      inpEmail.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); invitarAdmin(); }
+      });
+    }
+
+    var zonaAdmins = document.getElementById('zona-admins');
+    if (zonaAdmins) {
+      zonaAdmins.addEventListener('click', function (e) {
+        var b = e.target.closest ? e.target.closest('[data-quitar-admin]') : null;
+        if (!b) return;
+        quitarAdmin(b.getAttribute('data-quitar-admin'), b.getAttribute('data-nombre') || 'esa persona');
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', async function () {
@@ -2501,6 +2651,7 @@
     try {
       A.cargando(true, 'Cargando el panel…');
       await cargarPanel();
+      await cargarAdmins();
     } catch (e) {
       A.aviso(A.traducirError(e), 'error');
     } finally {

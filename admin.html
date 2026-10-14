@@ -102,6 +102,39 @@
         </div>
       </form>
     </div>
+
+    <!-- ------------------------------------------------ administradores -->
+    <div class="card card-pad-lg mt-6" style="max-width:760px">
+      <h2 class="card-title">Administradores</h2>
+      <p class="text-muted text-sm mb-4">
+        Quién puede entrar en este panel, ver los cobros y aprobar pagos.
+        Escribe un correo y esa persona será administradora <strong>en cuanto se registre</strong> en la web.
+        Tú sigues siendo el único que ve esta página desde su propia cuenta.
+      </p>
+
+      <div id="zona-admins">Cargando…</div>
+
+      <div class="card card-inset card-pad-sm mt-4">
+        <div class="label mb-2">Invitar a otra persona</div>
+        <div class="field-row">
+          <label class="field" style="flex:2 1 220px">
+            <span class="label">Su correo electrónico</span>
+            <input class="input" type="email" id="adm-email" autocomplete="off"
+                   placeholder="persona@correo.com" inputmode="email">
+          </label>
+          <label class="field" style="flex:1 1 140px">
+            <span class="label">Para qué (opcional)</span>
+            <input class="input" type="text" id="adm-nota" autocomplete="off"
+                   placeholder="Ej. Maribel" maxlength="60">
+          </label>
+        </div>
+        <button class="btn btn-primary mt-2" type="button" id="btn-invitar-admin">Invitar</button>
+        <span class="hint" style="display:block;margin-top:8px">
+          No hace falta que le digas nada más: se registra en la web con ese correo y su propia contraseña,
+          y entra como administradora sola.
+        </span>
+      </div>
+    </div>
   </section>
 
 </main>

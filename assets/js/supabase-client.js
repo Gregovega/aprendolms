@@ -356,6 +356,35 @@
       return r.data;
     },
 
+    /* ------------------------------------------------------------ administradores */
+
+    /** Quién administra la plataforma, con su nombre y su correo. */
+    async administradores() {
+      // El anidamiento con perfiles necesita la clave foránea admins.user_id ->
+      // perfiles.id, que crea la migración 004.
+      var r = await client.from('admins')
+        .select('user_id, creado_en, perfiles(nombre_completo, email)')
+        .order('creado_en');
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+    /** Correos invitados que todavía no se han registrado. */
+    async adminsInvitados() {
+      var r = await client.from('admins_invitados').select('email, nota, creado_en').order('creado_en');
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+    async invitarAdmin(email, nota) {
+      var r = await client.rpc('invitar_admin', { p_email: email, p_nota: nota || null });
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async quitarAdmin(userId) {
+      var r = await client.rpc('quitar_admin', { p_user_id: userId });
+      if (r.error) throw r.error;
+      return r.data;
+    },
+
     /* ------------------------------------------------ cobro manual de cursos */
 
     /** Todos los métodos de cobro (el administrador los ve aunque estén apagados). */
