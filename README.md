@@ -199,6 +199,27 @@ cd "G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
 El token queda guardado **solo en `.env`**. No se escribe en `.git/config` ni en la URL
 del remoto: viaja en una cabecera temporal durante el push.
 
+### Probar en local
+
+**No abras `index.html` con doble clic.** Con `file://` el navegador trata la página como
+origen nulo, bloquea las llamadas a Supabase y la autenticación falla. Hay que servirlo
+por HTTP:
+
+```powershell
+.\_tools\serve.cmd -AbrirNavegador
+```
+
+Queda disponible en <http://localhost:8080/>:
+
+| Dirección | Página |
+|---|---|
+| `http://localhost:8080/` | Portada |
+| `http://localhost:8080/curso.html?slug=mi-curso` | Página del curso |
+| `http://localhost:8080/admin.html` | Panel de administración |
+| `http://localhost:8080/verificar.html` | Verificar un certificado |
+
+En local no hay subdominios, así que usa siempre `?slug=`. `Ctrl+C` lo detiene.
+
 ---
 
 ## La regla que nunca se rompe
