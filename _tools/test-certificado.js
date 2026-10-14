@@ -23,7 +23,12 @@ const vm = require('vm');
 
 const raiz = path.resolve(__dirname, '..');
 const vendor = path.join(__dirname, 'vendor');
-const salida = path.join(__dirname, 'certificado-de-prueba.pdf');
+
+// La salida va DENTRO de vendor/, que esta en .gitignore.
+// Antes se escribia en _tools/ y paso lo previsible: un `git add -A` posterior lo
+// incluyo en un commit y el PDF de prueba acabo publicado en GitHub. Un artefacto
+// de pruebas nunca debe quedar al alcance de un add indiscriminado.
+const salida = path.join(vendor, 'certificado-de-prueba.pdf');
 
 console.log('\n=== Prueba de generacion del certificado ===\n');
 
@@ -175,8 +180,10 @@ function comprobar(condicion, descripcion, detalle) {
     if (caso.n === 'sin acentos') {
       comprobar(texto.indexOf(A.alumno) !== -1,
         'el nombre ASCII aparece literal en el PDF');
+      if (!fs.existsSync(vendor)) fs.mkdirSync(vendor, { recursive: true });
       fs.writeFileSync(salida, buf);
-      console.log(`         (guardado en _tools\\${path.basename(salida)}, ${buf.length} bytes)`);
+      console.log(`         (guardado en ${path.relative(raiz, salida)}, ${buf.length} bytes)`);
+      console.log('         (esa carpeta esta ignorada por Git)');
     }
   }
 

@@ -46,3 +46,4 @@ Desktop.ini
 # carga jsPDF desde su CDN. Se reinstala con:
 #   cd _tools\vendor && npm install jspdf@2.5.2 --no-audit --no-fund
 _tools/vendor/
+_tools/certificado-de-prueba.pdf
