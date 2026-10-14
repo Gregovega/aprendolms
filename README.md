@@ -269,6 +269,56 @@ y, si quieres, la URL de la firma (una imagen PNG con fondo transparente queda m
 
 ---
 
+## Dos decisiones de diseño que se apartan del prompt (a mejor)
+
+### 1. Replicabilidad: un despliegue, muchos cursos
+
+El prompt describe la replicabilidad así: para cada curso nuevo, **copiar el código a
+otro repositorio** y **cambiar las variables de Supabase**.
+
+Este proyecto lo simplifica: **un solo despliegue sirve todos los cursos**. Para añadir
+un curso basta con **crear un registro** en el panel de administración. No hay que
+duplicar el repositorio ni tocar credenciales.
+
+Por qué es mejor:
+
+| | Copiar el repo por curso | Un despliegue (lo implementado) |
+|---|---|---|
+| Añadir un curso | Subir código + configurar credenciales + DNS | Rellenar un formulario |
+| Corregir un fallo | En N repositorios | En uno |
+| Alumnos y progreso | Dispersos en N bases de datos | En una, con RLS por curso |
+| Coste | N proyectos de Supabase | Uno |
+
+La naturaleza de **plantilla** se mantiene: si mañana quieres una academia
+completamente distinta e independiente, copias el repositorio, cambias
+`.env` y `config.js`, y ya está. La plantilla sigue siendo replicable; lo que
+desaparece es la necesidad de replicarla para cada curso.
+
+### 2. Subdominios por curso
+
+El prompt pide que cada curso viva en su subdominio (`ventadechicha.tudominio.com`).
+
+`resolverSlug()` ya soporta **las cuatro vías**, así que el código está listo:
+
+1. `?slug=ventadechicha` ← lo que funciona hoy, sin configurar nada
+2. `?curso=ventadechicha`
+3. `ventadechicha.tudominio.com` ← el subdominio
+4. `/c/ventadechicha/`
+
+Detalle importante que conviene saber: **GitHub Pages admite un solo dominio
+personalizado por repositorio**, así que no basta con apuntar veinte subdominios al
+mismo sitio. Para que el subdominio funcione hace falta un **Cloudflare Worker** que
+reescriba la petición:
+
+```
+ventadechicha.tudominio.com  →  tudominio.com/curso.html?slug=ventadechicha
+```
+
+Cuando lleguemos a Cloudflare te dejo ese Worker escrito y probado. Mientras tanto,
+los enlaces con `?slug=` funcionan en cualquier hosting y en local.
+
+---
+
 ## Notas de entorno
 
 - **PowerShell 5.1** (no hay PS7). Los `.ps1` necesitan BOM UTF-8 para leerse bien,
@@ -277,8 +327,15 @@ y, si quieres, la URL de la firma (una imagen PNG con fondo transparente queda m
 - **Datos de otros proyectos.** Los servidores MCP `supabase` y `supabase-guardian`
   apuntan a **COMARCA** y **GUARDIANKYC**. Este proyecto no los usa ni los modifica:
   el esquema se aplica a mano en el SQL Editor del proyecto de APRENDO LMS.
-- **GitHub Pages y `.nojekyll`.** El archivo `.nojekyll` en la raíz es necesario:
-  sin él, Jekyll ignora la carpeta `_tools/` por empezar con guion bajo.
+- **GitHub Pages y `.nojekyll`.** Ese archivo desactiva el procesado de Jekyll. Motivo:
+  Jekyll ignora silenciosamente todo lo que empiece con guion bajo y añade un paso de
+  compilación que puede fallar. Con `.nojekyll` el sitio se publica tal cual, predecible
+  y al instante.
+  **Efecto secundario a tener en cuenta:** al no haber exclusiones, la carpeta `_tools/`
+  también queda publicada. Contiene scripts de desarrollo, la guía y las pruebas, y
+  **ninguno tiene secretos** (los secretos viven solo en `.env`, que Git ignora).
+  Si prefieres que no sea accesible, borra `.nojekyll` y añade un `_config.yml` con
+  `exclude: [_tools]`.
 - **Herramientas de comprobación** (opcionales):
   ```powershell
   node _tools\test-wistia.js                                    # 11 casos del detector de embeds
