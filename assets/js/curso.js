@@ -143,18 +143,39 @@
 
   function sinAcceso() {
     $('cargando-zona').hidden = true;
+
+    // Si el curso tiene precio, lo mas util es dejarle inscribirse aqui mismo en
+    // vez de mandarle a la portada: paga, sube el comprobante y ya queda en cola.
+    var precio = Number(curso.precio);
+    var dePago = isFinite(precio) && precio > 0;
+
     $('aviso-zona').innerHTML =
       '<div class="card text-center" style="padding:56px 24px;margin-top:40px">' +
       '<div style="font-size:2.6rem;margin-bottom:14px">&#128274;</div>' +
       '<h2>Aún no tienes acceso a este curso</h2>' +
       '<p class="text-muted">Tu cuenta está activa, pero no figuras como alumno de <strong>' + h(curso.nombre) + '</strong>.</p>' +
+      (dePago
+        ? '<button class="btn btn-primary btn-lg mt-4" type="button" id="btn-inscribirme">' +
+          'Inscríbete y paga ' + h(precio.toLocaleString('es-VE', { maximumFractionDigits: 2 })) +
+          ' ' + h(curso.moneda || 'Bs') + '</button>' +
+          '<p class="text-faint text-xs mt-2">Copia los datos, paga y sube tu comprobante aquí mismo.</p>'
+        : '') +
       '<div class="alert alert-info text-left mt-4" style="max-width:620px;margin-left:auto;margin-right:auto">' +
       '<span class="alert-icon">&#8505;</span><div class="alert-body">' +
-      'Escribe a la academia indicando el correo con el que te registraste: <strong>' +
+      (dePago
+        ? 'Si ya pagaste, el administrador lo está comprobando. Escríbele indicando el correo con el que te registraste: <strong>'
+        : 'Escribe a la academia indicando el correo con el que te registraste: <strong>') +
       h((alumno && alumno.email) || '') + '</strong> y te darán de alta.' +
       '</div></div>' +
       '<a class="btn btn-secondary mt-4" href="index.html">Ver todos los cursos</a>' +
       '</div>';
+
+    var b = $('btn-inscribirme');
+    if (b) {
+      b.addEventListener('click', function () {
+        window.Inscripcion.abrir(curso, { onInscrito: function () { location.reload(); } });
+      });
+    }
   }
 
   /* ============================================================ desbloqueo secuencial */

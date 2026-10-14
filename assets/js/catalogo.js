@@ -6,6 +6,10 @@
 
   var A;
 
+  /* Cursos publicados por slug: permite abrir la inscripción desde la tarjeta sin
+     volver a pedirlos a la base de datos. */
+  var porSlug = {};
+
   function $(id) { return document.getElementById(id); }
   function h(s) { return A.escaparHtml(s); }
 
@@ -47,7 +51,24 @@
       (foto ? ' style="background-image:url(' + h(foto) + ')"' : '') +
       ' aria-hidden="true">' + h(inicial) + '</div>';
 
-    return '<article class="card card-hover course-card">' +
+    // El boton cambia segun la situacion del alumno:
+    //   - ya inscrito            -> enlace directo al curso
+    //   - curso de pago          -> abre la inscripcion (registro + pago), que es
+    //                               lo que se pidio: sin salir de la portada
+    //   - curso gratis o sin precio -> enlace directo, no hay nada que cobrar
+    var etiqueta, accion;
+    if (opciones.inscrito) {
+      etiqueta = 'Continuar el curso';
+      accion = ' href="' + url + '"';
+    } else if (precio.hay) {
+      etiqueta = 'Inscríbete';
+      accion = ' type="button" data-inscribir="' + h(curso.slug) + '"';
+    } else {
+      etiqueta = 'Ver el curso';
+      accion = ' href="' + url + '"';
+    }
+
+    return '<article class="card card-hover course-card" data-curso="' + h(curso.slug) + '">' +
       portada +
       '<div class="course-cuerpo">' +
       '<h3 class="card-title">' + h(curso.nombre) + '</h3>' +
@@ -60,8 +81,7 @@
         ? '<span class="badge badge-ok"><span class="badge-dot"></span>Inscrito</span>'
         : '<span class="badge">' + h(curso.slug) + '</span>') +
       '</div>' +
-      '<a class="btn ' + (opciones.inscrito ? 'btn-primary' : 'btn-primary') + ' btn-block" href="' + url + '">' +
-      (opciones.inscrito ? 'Continuar el curso' : (precio.hay ? 'Inscríbete' : 'Ver el curso')) + '</a>' +
+      '<a class="btn btn-primary btn-block"' + accion + '>' + h(etiqueta) + '</a>' +
       '</div>' +
       '</article>';
   }
@@ -80,9 +100,14 @@
       return;
     }
 
+    // Los cursos donde el alumno ya está inscrito se marcan para que su botón
+    // lleve directo al curso en vez de volver a ofrecerle inscribirse.
+    var yaEsta = {};
+    (inscritos || []).forEach(function (c) { yaEsta[c.slug] = true; });
+
     zona.innerHTML = '<div class="catalogo-grid">' +
       cursos.map(function (c) {
-        return tarjetaCurso(c, { cerrado: true });
+        return tarjetaCurso(c, { cerrado: true, inscrito: !!yaEsta[c.slug] });
       }).join('') + '</div>';
   }
 
@@ -113,10 +138,20 @@
       b.addEventListener('click', function () { $('seccion-mis').scrollIntoView({ behavior: 'smooth' }); });
     }
 
+    // Los cursos del alumno se piden ANTES de pintar el catálogo: así el botón de
+    // cada tarjeta sale ya con el texto correcto, sin parpadeos ni dos pintadas.
+    var mios = [];
+    if (sesion) {
+      try { mios = await A.db.misCursosComprados(); }
+      catch (e) { console.warn('No se pudieron cargar los cursos del alumno:', e); }
+    }
+
     /* ---- catálogo ---- */
     try {
       var cursos = await A.db.cursosPublicados();
-      pintarCatalogo(cursos, []);
+      porSlug = {};
+      cursos.forEach(function (c) { porSlug[c.slug] = c; });
+      pintarCatalogo(cursos, mios);
     } catch (e) {
       $('zona-catalogo').innerHTML =
         '<div class="alert alert-danger"><span class="alert-icon">&#9888;</span>' +
@@ -124,12 +159,16 @@
     }
 
     /* ---- mis cursos ---- */
-    if (!sesion) return;
-    try {
-      var mios = await A.db.misCursosComprados();
-      pintarMisCursos(mios);
-    } catch (e) {
-      console.warn('No se pudieron cargar los cursos del alumno:', e);
-    }
+    if (sesion && mios.length) pintarMisCursos(mios);
+
+    /* ---- inscribirse sin salir de la portada ---- */
+    $('zona-catalogo').addEventListener('click', function (e) {
+      var boton = e.target.closest ? e.target.closest('[data-inscribir]') : null;
+      if (!boton) return;
+      e.preventDefault();
+      var curso = porSlug[boton.getAttribute('data-inscribir')];
+      if (!curso) return;
+      window.Inscripcion.abrir(curso, { onInscrito: function () { location.reload(); } });
+    });
   });
 })();

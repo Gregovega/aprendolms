@@ -1,9 +1,8 @@
 """
 VALIDADOR DE CONSISTENCIA DEL ESQUEMA SQL
 ==========================================
-No puedo ejecutar el SQL contra PostgreSQL (mi entorno no tiene red ni una base de
-datos), así que este script hace lo que sí es verificable sin motor: comprobar que
-el esquema es INTERNAMENTE coherente. Detecta:
+Comprueba que el esquema es INTERNAMENTE coherente sin necesidad de un motor de
+base de datos. Detecta:
 
   A. Referencias a tablas que no existen (errores de escritura)
   B. Tablas sin Row Level Security activado
@@ -12,16 +11,27 @@ el esquema es INTERNAMENTE coherente. Detecta:
   E. GRANT EXECUTE sobre funciones inexistentes
   F. Columnas usadas en políticas que no existen en su tabla
   G. Tablas creadas pero nunca mencionadas en ninguna política
+
+CORREGIDO: antes leía SOLO supabase/001_esquema_inicial.sql. Al añadir las
+migraciones 002 y 003 seguía diciendo "correcto" con 10 tablas, sin haber visto
+ni una de las tablas nuevas: daba por bueno un esquema que no había leído. Ahora
+lee TODAS las migraciones en orden, así que una 004 entra sola.
 """
-import re, sys, io, os
+import re, sys, io, os, glob
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 
-RUTA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                    'supabase', '001_esquema_inicial.sql')
+DIR_SQL = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'supabase')
+RUTAS = sorted(glob.glob(os.path.join(DIR_SQL, '*.sql')))
 
-with open(RUTA, 'r', encoding='utf-8') as f:
-    sql = f.read()
+if not RUTAS:
+    print('No se encontró ninguna migración en supabase/. Nada que validar.')
+    sys.exit(1)
+
+sql = ''
+for r in RUTAS:
+    with open(r, 'r', encoding='utf-8') as f:
+        sql += '\n' + f.read()
 
 # Quitamos los comentarios de linea para no confundir el analisis
 sin_comentarios = re.sub(r'--[^\n]*', '', sql)
@@ -139,6 +149,12 @@ for m in re.finditer(r'create\s+policy\s+(\w+)\s+on\s+public\.(\w+)(.*?);', sin_
     pol, tabla, cuerpo = m.group(1), m.group(2), m.group(3)
     if tabla not in tablas:
         continue
+
+    # Se quitan los literales de texto ANTES de buscar identificadores.
+    # En  estado = 'pendiente'  , "pendiente" es un VALOR, no una columna; sin
+    # esto saltaba un aviso falso en la politica pagos_crear.
+    cuerpo = re.sub(r"'(?:[^']|'')*'", "''", cuerpo)
+
     for im in re.finditer(r'\b([a-z_][a-z0-9_]*)\b', cuerpo):
         ident = im.group(1)
         if ident in PALABRAS or ident in funciones or ident in tablas:
@@ -156,7 +172,7 @@ for t in sorted(tablas):
                       f'nadie podra leerla ni escribirla desde el cliente')
 
 # ---------------------------------------------------------------- informe
-print(f'Archivo: {os.path.basename(RUTA)}  ({len(sql)} bytes)')
+print(f'Migraciones: {", ".join(os.path.basename(r) for r in RUTAS)}  ({len(sql)} bytes en total)')
 print(f'Tablas detectadas: {len(tablas)}')
 for t in sorted(tablas):
     print(f'   {t:20s} {len(tablas[t])} columnas, RLS={"si" if t in con_rls else "NO"}')

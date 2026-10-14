@@ -106,22 +106,34 @@
   /* ------------------------------------------------------------ modal de auth */
   var modoActual = 'entrar';
 
-  function abrirAuth(modo) {
+  /**
+   * Modal de entrar / crear cuenta.
+   *
+   * opciones.onExito  si se pasa, se llama al terminar en vez de recargar la
+   *                   página. Lo usa la inscripción a un curso: tras crear la
+   *                   cuenta hay que seguir con el pago, no perder el sitio.
+   * opciones.titulo   titulo a medida (por ejemplo para un curso concreto)
+   * opciones.lead     frase de apoyo a medida
+   */
+  function abrirAuth(modo, opciones) {
+    opciones = opciones || {};
     modoActual = modo || 'entrar';
     var existente = document.getElementById('modal-auth');
     if (existente) existente.remove();
 
     var esRegistro = modoActual === 'registro';
+    var titulo = opciones.titulo || (esRegistro ? 'Crear tu cuenta' : 'Iniciar sesión');
+    var lead = opciones.lead || (esRegistro
+      ? 'Regístrate para acceder a tus cursos.'
+      : 'Entra para continuar donde lo dejaste.');
 
     var cont = document.createElement('div');
     cont.className = 'modal-backdrop';
     cont.id = 'modal-auth';
     cont.innerHTML =
       '<div class="modal" role="dialog" aria-modal="true" aria-labelledby="auth-titulo">' +
-      '<h2 id="auth-titulo">' + (esRegistro ? 'Crear tu cuenta' : 'Iniciar sesión') + '</h2>' +
-      '<p class="text-muted text-sm">' + (esRegistro
-        ? 'Regístrate para acceder a tus cursos.'
-        : 'Entra para continuar donde lo dejaste.') + '</p>' +
+      '<h2 id="auth-titulo">' + h(titulo) + '</h2>' +
+      '<p class="text-muted text-sm">' + h(lead) + '</p>' +
       '<div id="auth-error"></div>' +
       '<form id="auth-form" novalidate>' +
       (esRegistro
@@ -211,6 +223,14 @@
         } else {
           var r2 = await A.auth.entrar(email, password);
           if (r2.error) throw r2.error;
+        }
+
+        // Si quien abrio el modal quiere continuar por su cuenta (por ejemplo,
+        // seguir con el pago de un curso), se le cede el control y no se navega.
+        if (typeof opciones.onExito === 'function') {
+          cerrar();
+          setTimeout(function () { opciones.onExito(); }, 220);
+          return;
         }
 
         // Navegar al destino guardado, o recargar para que la sesión surta efecto.

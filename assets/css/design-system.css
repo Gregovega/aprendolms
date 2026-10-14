@@ -524,6 +524,44 @@ img, video { max-width: 100%; display: block; }
 }
 .modal-backdrop.open .modal { transform: translateY(0) scale(1); }
 
+/* ---------------------------------------------------------------------------
+   Modal de inscripción: es más ancho porque dentro van los datos de pago con
+   sus botones de copiar, la casilla de la referencia y la del comprobante.
+   --------------------------------------------------------------------------- */
+.modal { position: relative; }
+.modal-ancho { width: min(680px, 100%); }
+.modal-cerrar {
+  position: absolute; top: 10px; right: 12px;
+  width: 34px; height: 34px; line-height: 1;
+  font-size: 1.5rem; color: var(--text-faint);
+  background: transparent; border: none; border-radius: 50%;
+  cursor: pointer; transition: color var(--t), background var(--t);
+}
+.modal-cerrar:hover { color: var(--text); background: rgba(255, 255, 255, .06); }
+
+/* Una fila de dato a copiar: etiqueta, valor y botón */
+.pago-campo {
+  gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+}
+.pago-campo:last-child { border-bottom: none; }
+.pago-campo .text-faint { flex: 0 0 34%; min-width: 0; }
+.pago-valor {
+  flex: 1 1 auto; min-width: 0;
+  text-align: right; font-size: .95rem;
+  word-break: break-all;   /* un número de cuenta largo no debe desbordar */
+  color: var(--text);
+}
+.pago-campo .btn { flex: 0 0 auto; }
+
+@media (max-width: 520px) {
+  /* En el teléfono la etiqueta va arriba y el valor debajo, para que el número
+     se lea entero sin apretujarse. */
+  .pago-campo { flex-wrap: wrap; }
+  .pago-campo .text-faint { flex: 0 0 100%; }
+  .pago-valor { text-align: left; }
+}
+
 /* ---------------------------------------------------------------- 12. LECCIONES */
 .lesson-list { display: flex; flex-direction: column; gap: 8px; }
 

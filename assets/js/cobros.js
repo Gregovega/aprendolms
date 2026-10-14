@@ -13,9 +13,13 @@
    ============================================================================ */
 (function () {
   'use strict';
-
   var A = window.APRENDO;
 
+  // Si falta la configuracion de Supabase, supabase-client.js no llega a definir
+  // window.APRENDO y ya muestra su propio aviso en la pagina. Sin esta guarda,
+  // cualquier llamada aqui fallaria con un "Cannot read properties of undefined"
+  // que no explica nada.
+  if (!A) return;
   /* Cada cuánto se pregunta si entraron pagos nuevos. 20 s es un buen equilibrio:
      se entera uno casi al momento sin castigar el teléfono ni la base de datos. */
   var SEGUNDOS_ENTRE_CONSULTAS = 20;

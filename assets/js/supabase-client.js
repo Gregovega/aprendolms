@@ -448,7 +448,7 @@
     async misPagos() {
       var r = await client.from('pagos')
         .select('id, estado, referencia, motivo, monto, moneda, metodo_etiqueta, creado_en, revisado_en, ' +
-                'duplicado_de, cursos(nombre, slug)')
+                'duplicado_de, curso_id, cursos(nombre, slug)')
         .order('creado_en', { ascending: false });
       if (r.error) throw r.error;
       return r.data || [];
