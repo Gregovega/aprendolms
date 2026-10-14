@@ -1621,7 +1621,28 @@
       return;
     }
 
-    if (!window.confirm('Se guardarán ' + filas.length + ' preguntas y se sustituirán las anteriores de este curso. ¿Continuar?')) return;
+    // Aviso nacido de probar el flujo real contra la base de datos:
+    // si una pregunta no esta vinculada a una leccion, el alumno que suspenda por
+    // ella NO recibira el boton "Repasar Leccion", porque el servidor no sabe a que
+    // video mandarlo (calificar_test solo devuelve leccion_repaso si leccion_id
+    // tiene valor). No lo bloqueamos, porque tener preguntas generales es legitimo,
+    // pero el administrador tiene que enterarse.
+    var sinLeccion = 0;
+    for (var k = 0; k < filas.length; k++) { if (!filas[k].leccion_id) sinLeccion++; }
+
+    var preguntaConfirmacion = 'Se guardaran ' + filas.length +
+      ' preguntas y se sustituiran las anteriores de este curso. ¿Continuar?';
+
+    if (sinLeccion > 0) {
+      preguntaConfirmacion =
+        sinLeccion + ' de las ' + filas.length + ' preguntas no estan vinculadas a ninguna leccion.\n\n' +
+        'Si un alumno suspende por una de esas preguntas NO vera el boton «Repasar Leccion», ' +
+        'porque el sistema no sabe a que video mandarlo.\n\n' +
+        'Se vinculan desde «Gestionar preguntas» dentro de cada leccion.\n\n' +
+        '¿Guardar de todas formas?';
+    }
+
+    if (!window.confirm(preguntaConfirmacion)) return;
 
     A.cargando(true, 'Guardando las preguntas…');
     var borrado = false;
@@ -1631,6 +1652,10 @@
       await A.db.crearPreguntas(filas);
       estado.preguntasSucias = false;
       A.aviso('Se guardaron ' + filas.length + ' preguntas.', 'ok');
+      if (sinLeccion > 0) {
+        A.aviso(sinLeccion + ' pregunta(s) sin leccion vinculada: si un alumno suspende por ' +
+                'ellas no vera el boton para repasar el video.', 'warn', 9000);
+      }
       await cargarDatosCurso(capa, curso);   // recargamos para tener los ids reales
     } catch (e) {
       var msg = A.traducirError(e);

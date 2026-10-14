@@ -56,16 +56,64 @@ se genera en el navegador con jsPDF.
 - **Worker de Cloudflare** para los subdominios por curso, con su lógica de enrutado
   probada (22 casos).
 - **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 9 comprobaciones del
-  proyecto de una vez.
+  proyecto de una vez (**130 comprobaciones individuales**).
+- **Esquema SQL APLICADO** en el proyecto `wkqmgkevttvmbqrpxguk`: 10 tablas, 18 políticas,
+  7 funciones y el disparador de perfiles. Verificado consultando la base de datos.
+- **Publicado**: 28 commits en GitHub y la web en línea en
+  <https://gregovega.github.io/aprendolms/>.
+- **Flujo del alumno verificado de extremo a extremo** contra la base de datos real:
+  control de acceso, RLS, corrección del examen, botón "Repasar Lección", emisión del
+  certificado y verificación pública. Ver más abajo.
 
-### ⏳ Pendiente
+### ⏳ Pendiente (acciones tuyas, no del código)
 
-1. **Aplicar el esquema SQL** en el SQL Editor del proyecto nuevo.
-2. **Token de GitHub** (fine-grained, solo `Gregovega/aprendolms`) y primer push.
-3. **Cuenta de Wistia** y primer video.
-4. **Activar GitHub Pages**.
-5. **Probar el flujo completo** con datos reales: crear un curso, inscribir un alumno,
-   ver un video, aprobar el examen y descargar el certificado.
+1. **Cuenta de Wistia** y primer video real. La integración está construida y probada
+   (11 casos), pero hace falta un video tuyo para verlo funcionar de verdad.
+2. **Crear tu cuenta** en la web y darte de alta como administrador (paso 9 del SQL).
+3. **Tu primer curso** de verdad, desde el panel de administración.
+
+---
+
+## Verificación del flujo completo contra la base de datos real
+
+No se dio nada por supuesto: se ejercitó el flujo con datos reales y se comprobó cada
+respuesta. Estos son los resultados, y lo que demuestran.
+
+### Control de acceso y RLS
+
+| Prueba | Resultado |
+|---|---|
+| Alumno **sin inscripción** intenta ver las lecciones | **0 lecciones** |
+| Alumno **sin inscripción** llama a `obtener_preguntas()` | **RECHAZADO: "Sin acceso a este curso"** |
+| Alumno **con inscripción** ve las lecciones | **2 de 2** |
+| Alumno **con inscripción** lee `preguntas_test` directamente | **0 filas** (RLS lo bloquea) |
+| Columnas que devuelve `obtener_preguntas()` | `id, pregunta, opciones, orden` — **sin `respuesta_correcta`** |
+| Alumno intenta escribir progreso **a nombre de otro** | **BLOQUEADO: viola la política RLS** |
+
+Que `preguntas_test` devuelva 0 filas **con una pregunta cargada en la tabla** es la prueba
+de que las respuestas del examen no llegan al navegador. No es una suposición: se insertó
+una pregunta con su respuesta y se comprobó qué ve un visitante anónimo.
+
+### Examen y certificado
+
+| Prueba | Resultado |
+|---|---|
+| Responder todo bien | `aciertos=2/2  nota=100  aprobado=true` |
+| Responder todo mal | `aciertos=0/2  nota=0  aprobado=false` |
+| Fallar **solo la pregunta 1** | devuelve `leccion_repaso = "Leccion 1"` |
+| Fallar **solo la pregunta 2** | devuelve `leccion_repaso = "Leccion 2"` |
+| Al aprobar | certificado con código `610539B9F8` |
+| Verificación pública con el código válido | devuelve alumno y curso |
+| Verificación pública con un código falso | **0 filas** |
+| Historial | los 4 intentos quedaron guardados |
+
+El botón **"Repasar Lección"** manda al video correcto: se comprobó fallando una pregunta
+distinta cada vez y viendo que devuelve la lección correspondiente.
+
+> **De esta prueba salió una mejora.** Si el administrador no vincula las preguntas a una
+> lección, el servidor no sabe a qué video mandar al alumno y el botón no aparece — en
+> silencio. Ahora el panel avisa al guardar: dice cuántas preguntas están sin vincular y
+> explica la consecuencia antes de confirmar.
 
 ---
 
