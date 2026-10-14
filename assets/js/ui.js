@@ -24,12 +24,25 @@
       '<span>' + h(marca) + '<span class="brand-sub" style="display:block">Aprendo LMS</span></span>' +
       '</a>' +
       '<nav class="nav-links" style="margin-left:18px">' +
-      '<a href="index.html"' + (activo === 'cursos' ? ' class="active"' : '') + '>Cursos</a>' +
-      '<a href="verificar.html"' + (activo === 'verificar' ? ' class="active"' : '') + '>Verificar certificado</a>' +
-      '<a href="admin.html" id="nav-admin" class="hidden">Administración</a>' +
-      // Cobros lleva el número de pagos pendientes entre paréntesis: así se ve
-      // desde cualquier página, sin tener que entrar a mirar.
-      '<a href="cobros.html" id="nav-cobros" class="hidden">Cobros<span id="nav-cobros-n"> </span></a>' +
+      // Cada enlace lleva un icono y DOS etiquetas: la larga, que se ve en el
+      // ordenador, y la corta, que es la que cabe en la barra de abajo del
+      // telefono sin cortarse. El CSS decide cual se ve en cada caso.
+      '<a href="index.html"' + (activo === 'cursos' ? ' class="active"' : '') + '>' +
+        '<span class="nav-ico" aria-hidden="true">&#128218;</span>' +
+        '<span class="nav-txt">Cursos</span></a>' +
+      '<a href="verificar.html"' + (activo === 'verificar' ? ' class="active"' : '') + '>' +
+        '<span class="nav-ico" aria-hidden="true">&#127941;</span>' +
+        '<span class="nav-txt"><span class="solo-escritorio">Verificar certificado</span>' +
+        '<span class="solo-movil">Certificado</span></span></a>' +
+      '<a href="admin.html" id="nav-admin" class="hidden">' +
+        '<span class="nav-ico" aria-hidden="true">&#9881;&#65039;</span>' +
+        '<span class="nav-txt"><span class="solo-escritorio">Administración</span>' +
+        '<span class="solo-movil">Admin</span></span></a>' +
+      // Cobros lleva el número de pagos pendientes: así se ve desde cualquier
+      // página, sin tener que entrar a mirar.
+      '<a href="cobros.html" id="nav-cobros" class="hidden">' +
+        '<span class="nav-ico" aria-hidden="true">&#128176;</span>' +
+        '<span class="nav-txt">Cobros<span id="nav-cobros-n"></span></span></a>' +
       '</nav>' +
       '<span class="spacer"></span>' +
       '<div id="zona-sesion" class="row" style="gap:8px"></div>' +

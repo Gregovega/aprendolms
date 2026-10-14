@@ -150,8 +150,11 @@ img, video { max-width: 100%; display: block; }
 .spacer { flex: 1 1 auto; }
 
 .grid { display: grid; gap: var(--s-5); }
-.grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
-.grid-3 { grid-template-columns: repeat(auto-fit, minmax(265px, 1fr)); }
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); }
+/* min(265px, 100%) y no 265px a secas: en un telefono muy estrecho (320 px) el
+   minimo de 265 px no cabe una vez descontado el margen lateral, y la rejilla
+   empujaria la pagina a lo ancho. Asi, cuando no cabe, ocupa el 100% y se apila. */
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(min(265px, 100%), 1fr)); }
 
 /* ---------------------------------------------------------------------------
    Cuadricula del catalogo de cursos.
@@ -233,6 +236,97 @@ img, video { max-width: 100%; display: block; }
 }
 .nav-links a:hover { background: var(--surface-2); color: var(--text); }
 .nav-links a.active { color: var(--text); background: var(--surface-2); }
+
+/* El icono del menú solo se usa en la barra de abajo del teléfono */
+.nav-links .nav-ico { display: none; }
+
+/* En el ordenador manda la etiqueta larga; la corta es solo para el teléfono */
+.solo-movil { display: none; }
+
+/* ---------------------------------------------------------------------------
+   CABECERA Y MENÚ EN EL TELÉFONO — el menú se va ABAJO, como en una aplicación.
+
+   QUÉ PASABA: la cabecera tenía altura FIJA y una sola fila. La marca, el menú y
+   los botones no caben en 360 px, así que en vez de acomodarse empujaban TODA la
+   página a 509 px de ancho. Había que arrastrar de lado en todas las pantallas.
+   (Medido: documento=509 px con pantalla de 360, 390 y 414.)
+
+   AHORA:
+     arriba -> marca a la izquierda, entrar/crear cuenta a la derecha (una fila)
+     abajo  -> el menú, fijo, al alcance del pulgar
+
+   La barra de abajo es lo que hace que se sienta aplicación y no página web. Va
+   fija al viewport, y para que eso funcione desde dentro de la cabecera hay que
+   quitarle el desenfoque de fondo: backdrop-filter convierte al elemento en el
+   marco de referencia de sus hijos fijos, y la barra se quedaría pegada arriba.
+   --------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .site-header {
+    height: auto;
+    min-height: var(--header-h);
+    padding-block: 4px;
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  /* flex-wrap por si en un telefono muy estrecho (360 px) los botones no caben
+     junto a la marca: bajan a una segunda linea en vez de salirse de la pantalla. */
+  .site-header .container-wide { flex-wrap: wrap; gap: 6px 8px; padding-block: 6px; }
+
+  .brand { flex: 1 1 auto; min-width: 0; }
+  .brand-mark { width: 30px; height: 30px; font-size: 15px; border-radius: 9px; }
+  .brand-sub { font-size: .6rem; }
+
+  /* En una fila ya no hay que empujar nada hacia el lado */
+  .site-header .spacer { display: none; }
+
+  /* width:auto es imprescindible: mas abajo hay una regla que pone TODOS los
+     botones a ancho completo para el telefono, y aplicada aqui estiraba los de
+     la cabecera hasta salirse de la pantalla. */
+  #zona-sesion { flex: 0 1 auto; }
+  #zona-sesion .btn { width: auto; padding: 9px 12px; font-size: .84rem; }
+
+  .site-header .nav-links {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 70;
+    justify-content: space-around;
+    gap: 0;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: rgba(10, 14, 23, 0.97);
+    border-top: 1px solid var(--line);
+  }
+  .site-header .nav-links a {
+    flex: 1 1 0;
+    min-width: 0;                 /* imprescindible para que el texto pueda encogerse */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    text-align: center;
+    padding: 7px 4px;
+    font-size: .7rem;
+    white-space: nowrap;
+    border-radius: 10px;
+  }
+  /* Icono encima y texto debajo: la forma habitual de una barra de aplicación */
+  .site-header .nav-links .nav-ico { display: block; font-size: 1.1rem; line-height: 1.1; }
+  .site-header .nav-links .nav-txt { display: block; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+  /* En el teléfono se ve la etiqueta corta, que es la que cabe sin cortarse */
+  .solo-escritorio { display: none; }
+  .solo-movil { display: inline; }
+
+  /* Hueco abajo para que la barra no tape el final del contenido */
+  body { padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* Nada debe poder empujar la página a lo ancho: imágenes y tablas se ajustan a su
+   hueco en vez de desbordar. */
+img, video, iframe, table, canvas, svg { max-width: 100%; }
+/* Los textos sin espacios (referencias de pago, correos, direcciones) se parten
+   en vez de estirar su contenedor. */
+code { overflow-wrap: anywhere; }
 
 /* ---------------------------------------------------------------- 5. BOTONES */
 .btn {
@@ -752,7 +846,9 @@ table.data tbody tr:last-child td { border-bottom: none; }
   :root { --header-h: 60px; }
   .nav-links a { padding: 7px 9px; font-size: .86rem; }
   .hero { padding: var(--s-6) 0 var(--s-5); }
-  .drawer, .drawer-wide { width: 100vw; }
+  /* width:100% y NO 100vw: 100vw incluye el ancho de la barra de desplazamiento y
+     en el teléfono deja el cajón más ancho que la pantalla. */
+  .drawer, .drawer-wide { width: 100%; }
   .card { padding: var(--s-4); }
   /* La tarjeta de curso ya no usa relleno propio: la portada sangra sola y los
      textos llevan su propio espaciado. */
