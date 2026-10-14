@@ -1,7 +1,7 @@
 /* ============================================================
    APRENDO LMS — configuración del frontend
    GENERADO AUTOMÁTICAMENTE por _tools/set-credentials.ps1
-   Fecha: 2026-10-14 13:30:48
+   Fecha: 2026-10-14 13:42:39
 
    Este archivo SÍ se publica en GitHub Pages. Es correcto y seguro:
    la anon key está diseñada para vivir en el navegador y queda

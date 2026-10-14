@@ -1756,6 +1756,12 @@
       leccion: leccionId || null
     };
 
+    // Sin fetch (navegador muy antiguo) se va directo a la vía manual.
+    if (!window.fetch) {
+      cuerpo.innerHTML = vistaManualIA('fallo-endpoint', 'este navegador no soporta fetch');
+      return;
+    }
+
     window.fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1774,7 +1780,8 @@
       if (!analisis.ok) {
         throw new Error('las preguntas recibidas no pasan la validación (' + analisis.errores[0] + ')');
       }
-      aplicarPreguntasIA(analisis.preguntas, leccionId, capa);
+      // Las preguntas se cargan en el editor del drawer, no en este modal.
+      aplicarPreguntasIA(analisis.preguntas, leccionId, capa.capaEditor);
       capa.cerrar(true);
     }).catch(function (e) {
       // Vía 2: siempre queda el camino manual.
