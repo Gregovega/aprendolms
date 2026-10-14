@@ -9,27 +9,60 @@
   function $(id) { return document.getElementById(id); }
   function h(s) { return A.escaparHtml(s); }
 
+  /**
+   * Precio listo para mostrar. El curso puede no tener precio (0 o vacio), en
+   * cuyo caso se anuncia como gratis.
+   */
+  function textoPrecio(curso) {
+    var n = Number(curso.precio);
+    var moneda = (curso.moneda || 'Bs').trim();
+    if (!isFinite(n) || n <= 0) return { html: '<span class="course-precio gratis">Gratis</span>', hay: false };
+    // Sin decimales si son .00, y con separador de miles
+    var num = (Math.round(n * 100) / 100).toLocaleString('es-VE', { maximumFractionDigits: 2 });
+    return {
+      html: '<span class="course-precio">' + h(num) + '<span class="moneda">' + h(moneda) + '</span></span>',
+      hay: true
+    };
+  }
+
+  /**
+   * Limpia una URL de imagen para poder usarla dentro de url(...) en un atributo
+   * style. Se queda solo con caracteres propios de una URL: asi la direccion no
+   * puede cerrar el parentesis, romper el atributo ni inyectar CSS.
+   */
+  function urlSegura(u) {
+    return String(u || '').trim().replace(/[^\w\-./:%?=&#+~@[\]]/g, '');
+  }
+
   function tarjetaCurso(curso, opciones) {
     opciones = opciones || {};
     var inicial = (curso.nombre || 'C').trim().charAt(0).toUpperCase();
     var url = 'curso.html?slug=' + encodeURIComponent(curso.slug);
+    var foto = urlSegura(curso.imagen_url);
+    var precio = textoPrecio(curso);
+
+    // Con foto se pinta como fondo y se oculta la letra; sin foto queda la letra
+    // sobre el degradado, que sigue siendo un respaldo digno.
+    var portada = '<div class="course-cover' + (foto ? ' tiene-foto' : '') + '"' +
+      (foto ? ' style="background-image:url(' + h(foto) + ')"' : '') +
+      ' aria-hidden="true">' + h(inicial) + '</div>';
 
     return '<article class="card card-hover course-card">' +
-      '<div class="course-cover">' + h(inicial) + '</div>' +
-      '<div>' +
+      portada +
+      '<div class="course-cuerpo">' +
       '<h3 class="card-title">' + h(curso.nombre) + '</h3>' +
       '<p class="course-desc">' + h(curso.descripcion || 'Sin descripción.') + '</p>' +
       '</div>' +
-      '<div class="row-between" style="margin-top:auto">' +
-      '<span class="card-meta">' + h(curso.slug) + '</span>' +
+      '<div class="course-pie">' +
+      '<div class="row-between mb-2">' +
+      precio.html +
       (opciones.inscrito
         ? '<span class="badge badge-ok"><span class="badge-dot"></span>Inscrito</span>'
-        : (opciones.cerrado
-            ? '<span class="badge badge-warn">Requiere inscripción</span>'
-            : '<span class="badge badge-accent">Ver curso</span>')) +
+        : '<span class="badge">' + h(curso.slug) + '</span>') +
       '</div>' +
-      '<a class="btn ' + (opciones.inscrito ? 'btn-primary' : 'btn-secondary') + ' btn-block" href="' + url + '">' +
-      (opciones.inscrito ? 'Continuar' : 'Ver el curso') + '</a>' +
+      '<a class="btn ' + (opciones.inscrito ? 'btn-primary' : 'btn-primary') + ' btn-block" href="' + url + '">' +
+      (opciones.inscrito ? 'Continuar el curso' : (precio.hay ? 'Inscríbete' : 'Ver el curso')) + '</a>' +
+      '</div>' +
       '</article>';
   }
 
@@ -47,7 +80,7 @@
       return;
     }
 
-    zona.innerHTML = '<div class="grid grid-3">' +
+    zona.innerHTML = '<div class="catalogo-grid">' +
       cursos.map(function (c) {
         return tarjetaCurso(c, { cerrado: true });
       }).join('') + '</div>';

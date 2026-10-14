@@ -152,6 +152,33 @@ img, video { max-width: 100%; display: block; }
 .grid { display: grid; gap: var(--s-5); }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(265px, 1fr)); }
+
+/* ---------------------------------------------------------------------------
+   Cuadricula del catalogo de cursos.
+
+   Usa columnas EXPLICITAS (repeat(3, ...)) y no auto-fit/auto-fill, a proposito:
+   con auto-fit, un solo curso ocupaba TODO el ancho de la pantalla y la tarjeta
+   salia estirada, con la letra gigante en medio. El cliente lo describio como
+   "una B grandota a lo largo de la vaina".
+
+   Con columnas fijas, la tarjeta mide siempre un tercio y las que falten dejan
+   su hueco: tres cursos se ven en una fila, y el cuarto empieza la siguiente.
+
+     telefono      -> 1 por linea
+     tableta       -> 2 por linea
+     escritorio    -> 3 por linea  (lo que se pidio)
+   --------------------------------------------------------------------------- */
+.catalogo-grid {
+  display: grid;
+  gap: var(--s-5);
+  grid-template-columns: minmax(0, 1fr);
+}
+@media (min-width: 620px) {
+  .catalogo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 980px) {
+  .catalogo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 .grid-4 { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }
 
 .text-center { text-align: center; }
@@ -284,19 +311,45 @@ img, video { max-width: 100%; display: block; }
 .card-meta  { font-size: .82rem; color: var(--text-faint); }
 
 /* Tarjeta de curso en el catálogo */
-.course-card { display: flex; flex-direction: column; gap: var(--s-3); cursor: pointer; }
+.course-card {
+  display: flex; flex-direction: column; gap: 0;
+  height: 100%;                 /* todas las tarjetas de una fila, igual de altas */
+  padding: 0;                   /* la portada sangra hasta los bordes */
+  overflow: hidden;
+}
+.course-card .course-cuerpo { padding: var(--s-4) var(--s-5) 0; flex: 1 1 auto; }
+.course-card .course-pie    { padding: var(--s-4) var(--s-5) var(--s-5); }
+
+/* Portada: la foto de miniatura si la hay; si no, una letra sobre un degradado */
 .course-card .course-cover {
-  height: 132px; border-radius: var(--r-sm); margin: calc(var(--s-5) * -1) calc(var(--s-5) * -1) 0;
+  position: relative;
+  height: 170px; flex: none;
   background: linear-gradient(135deg, #1a2434, #0F1520 60%, #241a10);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
   border-bottom: 1px solid var(--line);
   display: grid; place-items: center;
-  font-family: 'Outfit', sans-serif; font-size: 2.4rem; font-weight: 800;
-  color: var(--accent); opacity: .85;
+  font-family: 'Outfit', sans-serif; font-size: 3rem; font-weight: 800;
+  color: var(--accent); opacity: .9;
+}
+/* Con foto, la letra se oculta y la imagen llena el espacio */
+.course-card .course-cover.tiene-foto { opacity: 1; color: transparent; }
+.course-card .course-cover.tiene-foto::after {
+  /* Velo oscuro abajo: la foto puede ser clara y el titulo va justo debajo */
+  content: ''; position: absolute; inset: auto 0 0 0; height: 45%;
+  background: linear-gradient(to top, rgba(10,14,23,.5), transparent);
 }
 .course-card .course-desc {
   color: var(--text-muted); font-size: .92rem;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
 }
+.course-card .course-precio {
+  font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.3rem;
+  color: var(--accent); line-height: 1.1;
+}
+.course-card .course-precio .moneda {
+  font-size: .78rem; font-weight: 600; color: var(--text-muted); margin-left: 5px;
+}
+.course-card .course-precio.gratis { color: var(--ok); }
 
 /* ---------------------------------------------------------------- 7. FORMULARIOS */
 .field { display: block; margin-bottom: var(--s-4); }
@@ -663,7 +716,12 @@ table.data tbody tr:last-child td { border-bottom: none; }
   .hero { padding: var(--s-6) 0 var(--s-5); }
   .drawer, .drawer-wide { width: 100vw; }
   .card { padding: var(--s-4); }
-  .course-card .course-cover { margin: calc(var(--s-4) * -1) calc(var(--s-4) * -1) 0; height: 108px; }
+  /* La tarjeta de curso ya no usa relleno propio: la portada sangra sola y los
+     textos llevan su propio espaciado. */
+  .course-card { padding: 0; }
+  .course-card .course-cuerpo { padding: var(--s-4) var(--s-4) 0; }
+  .course-card .course-pie    { padding: var(--s-3) var(--s-4) var(--s-4); }
+  .course-card .course-cover { height: 190px; }
 }
 @media (max-width: 520px) {
   body { font-size: 15px; }

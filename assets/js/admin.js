@@ -620,12 +620,25 @@
         '<label class="field"><span class="label">Precio</span>' +
           '<input class="input" type="number" id="cu-precio" min="0" step="0.01" inputmode="decimal" ' +
           'placeholder="0.00" value="' + h(precioValor(curso)) + '">' +
-          '<span class="hint">Opcional. Déjalo vacío si el curso no tiene precio.</span></label>' +
-        '<div class="field"><span class="label">Estado</span>' +
-          '<label class="check"><input type="checkbox" id="cu-publicado"' + (curso && curso.publicado ? ' checked' : '') + '>' +
-          '<span>Publicado (visible en el catálogo)</span></label>' +
-          '<span class="hint">Un curso en borrador no aparece en la portada.</span>' +
-        '</div>' +
+          '<span class="hint">Opcional. Déjalo vacío o en 0 si el curso es gratis.</span></label>' +
+        '<label class="field"><span class="label">Moneda</span>' +
+          '<input class="input" type="text" id="cu-moneda" autocomplete="off" maxlength="10" ' +
+          'placeholder="Bs" value="' + h(curso && curso.moneda ? curso.moneda : 'Bs') + '">' +
+          '<span class="hint">Tal como se lo muestras al alumno: Bs, USD, USDT…</span></label>' +
+      '</div>' +
+
+      '<label class="field"><span class="label">Foto de la tarjeta</span>' +
+        '<input class="input" type="url" id="cu-imagen" autocomplete="off" inputmode="url" ' +
+        'placeholder="https://…/foto.jpg" value="' + h(curso && curso.imagen_url ? curso.imagen_url : '') + '">' +
+        '<span class="hint">Es la foto que se ve en el catálogo, arriba del título. ' +
+        'Si la dejas vacía se pinta la inicial del curso. Lo ideal es 1200×675 (16:9).</span></label>' +
+      '<img id="cu-imagen-previa" class="hidden mb-4" alt="Vista previa de la foto" ' +
+        'style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">' +
+
+      '<div class="field"><span class="label">Estado</span>' +
+        '<label class="check"><input type="checkbox" id="cu-publicado"' + (curso && curso.publicado ? ' checked' : '') + '>' +
+        '<span>Publicado (visible en el catálogo)</span></label>' +
+        '<span class="hint">Un curso en borrador no aparece en la portada.</span>' +
       '</div>';
 
     var pie =
@@ -639,6 +652,8 @@
       descripcion: curso ? texto(curso.descripcion) : '',
       slug: curso ? texto(curso.slug) : '',
       precio: precioValor(curso),
+      moneda: curso && curso.moneda ? texto(curso.moneda) : 'Bs',
+      imagen: curso && curso.imagen_url ? texto(curso.imagen_url) : '',
       publicado: !!(curso && curso.publicado)
     };
 
@@ -661,6 +676,8 @@
           valorDe('cu-descripcion') === original.descripcion &&
           valorDe('cu-slug') === original.slug &&
           valorDe('cu-precio') === original.precio &&
+          valorDe('cu-moneda') === original.moneda &&
+          valorDe('cu-imagen') === original.imagen &&
           !!chk && chk.checked === original.publicado;
         if (igual) return true;
         return window.confirm('Tienes cambios sin guardar en este curso. ¿Cerrar de todos modos?');
@@ -676,6 +693,9 @@
     var inpNombre = panel.querySelector('#cu-nombre');
     var inpSlug = panel.querySelector('#cu-slug');
     var inpPrecio = panel.querySelector('#cu-precio');
+    var inpMoneda = panel.querySelector('#cu-moneda');
+    var inpImagen = panel.querySelector('#cu-imagen');
+    var previaImagen = panel.querySelector('#cu-imagen-previa');
     var inpPublicado = panel.querySelector('#cu-publicado');
     var zonaUrl = panel.querySelector('#cu-url');
     var zonaError = panel.querySelector('#curso-error');
@@ -725,6 +745,31 @@
 
     pintarUrl();
 
+    // Vista previa de la foto de la tarjeta. Se enseña solo si la imagen carga de
+    // verdad: asi, con una URL rota, no queda un hueco vacio ocupando espacio.
+    function pintarPreviaImagen() {
+      if (!previaImagen || !inpImagen) return;
+      var u = (inpImagen.value || '').trim();
+      if (!u) {
+        previaImagen.classList.add('hidden');
+        previaImagen.removeAttribute('src');
+        return;
+      }
+      previaImagen.onload = function () { previaImagen.classList.remove('hidden'); };
+      previaImagen.onerror = function () { previaImagen.classList.add('hidden'); };
+      previaImagen.src = u;
+    }
+    if (inpImagen) inpImagen.addEventListener('input', pintarPreviaImagen);
+    pintarPreviaImagen();
+
+    // Los campos que se guardan, en un solo sitio para no olvidar ninguno.
+    function camposCurso() {
+      return {
+        nombre: inpNombre, slug: inpSlug, precio: inpPrecio, moneda: inpMoneda,
+        imagen: inpImagen, publicado: inpPublicado, zonaError: zonaError
+      };
+    }
+
     panel.addEventListener('click', function (e) {
       var b = ancestroConAccion(e.target, panel);
       if (!b) return;
@@ -732,18 +777,13 @@
       if (accion === 'cancelar') {
         capa.cerrar();
       } else if (accion === 'guardar') {
-        guardarCurso(capa, curso, esNuevo, {
-          nombre: inpNombre, slug: inpSlug, precio: inpPrecio,
-          publicado: inpPublicado, zonaError: zonaError
-        });
+        guardarCurso(capa, curso, esNuevo, camposCurso());
       }
     });
 
     // Enter en el título guarda (evita tener que bajar al pie)
     inpNombre.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') { e.preventDefault(); guardarCurso(capa, curso, esNuevo, {
-        nombre: inpNombre, slug: inpSlug, precio: inpPrecio, publicado: inpPublicado, zonaError: zonaError
-      }); }
+      if (e.key === 'Enter') { e.preventDefault(); guardarCurso(capa, curso, esNuevo, camposCurso()); }
     });
   }
 
@@ -806,11 +846,32 @@
       precio = n;
     }
 
+    // Moneda: es solo la etiqueta que ve el alumno junto al precio.
+    var moneda = campos.moneda ? campos.moneda.value.trim() : '';
+    if (!moneda) moneda = 'Bs';
+    if (moneda.length > 10) {
+      campos.zonaError.innerHTML = alertaHtml('La moneda no puede pasar de 10 caracteres.', 'danger');
+      campos.moneda.focus();
+      return;
+    }
+
+    // Foto de la tarjeta: solo http(s). Se valida aqui para no guardar una
+    // direccion rota que luego deje un hueco en el catalogo.
+    var imagen = campos.imagen ? campos.imagen.value.trim() : '';
+    if (imagen && !/^https?:\/\//i.test(imagen)) {
+      campos.zonaError.innerHTML = alertaHtml(
+        'La foto tiene que ser una dirección que empiece por <code>http://</code> o <code>https://</code>.', 'danger');
+      campos.imagen.focus();
+      return;
+    }
+
     var datos = {
       nombre: nombre,
       slug: slug,
       descripcion: panel.querySelector('#cu-descripcion').value.trim() || null,
       precio: precio,
+      moneda: moneda,
+      imagen_url: imagen || null,
       publicado: !!campos.publicado.checked
     };
 
