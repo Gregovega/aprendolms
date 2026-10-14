@@ -53,7 +53,7 @@ Write-Host ('  ' + ('-' * 34)) -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------- 1. JavaScript
 Write-Host ''
-Write-Host '  [1/7] Sintaxis JavaScript' -ForegroundColor Cyan
+Write-Host '  [1/8] Sintaxis JavaScript' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Sintaxis JS' $false 'node no encontrado'
     Write-Host '        node no encontrado' -ForegroundColor Red
@@ -70,7 +70,7 @@ if (-not $node) {
 
 # ---------------------------------------------------------------- 2. HTML
 Write-Host ''
-Write-Host '  [2/7] Estructura de las paginas HTML' -ForegroundColor Cyan
+Write-Host '  [2/8] Estructura de las paginas HTML' -ForegroundColor Cyan
 if (-not $python) {
     Anotar 'Estructura HTML' $false 'Python no encontrado (es opcional)'
     Write-Host '        Python no encontrado; se omite' -ForegroundColor Yellow
@@ -86,7 +86,7 @@ if (-not $python) {
 
 # ---------------------------------------------------------------- 3. Cableado
 Write-Host ''
-Write-Host '  [3/7] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
+Write-Host '  [3/8] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_wiring.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -103,7 +103,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 4. SQL
 Write-Host ''
-Write-Host '  [4/7] Consistencia del esquema SQL' -ForegroundColor Cyan
+Write-Host '  [4/8] Consistencia del esquema SQL' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_sql.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -119,7 +119,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 5. Wistia
 Write-Host ''
-Write-Host '  [5/7] Deteccion de embeds de Wistia' -ForegroundColor Cyan
+Write-Host '  [5/8] Deteccion de embeds de Wistia' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node '_tools\test-wistia.js' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -132,7 +132,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 6. Worker
 Write-Host ''
-Write-Host '  [6/7] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
+Write-Host '  [6/8] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node 'cloudflare\test-routing.mjs' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -145,7 +145,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 7. Anidamientos
 Write-Host ''
-Write-Host '  [7/7] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
+Write-Host '  [7/8] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_embeds.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -158,6 +158,27 @@ if ($python) {
     Anotar 'Anidamientos/FK' $ok "$cuantos anidamientos"
 } else {
     Anotar 'Anidamientos/FK' $false 'Python no encontrado'
+}
+
+# ---------------------------------------------------------------- 8. Certificado
+Write-Host ''
+Write-Host '  [8/8] Generacion del certificado PDF (con jsPDF de verdad)' -ForegroundColor Cyan
+if (-not $node) {
+    Anotar 'Certificado PDF' $false 'node no encontrado'
+} elseif (-not (Test-Path '_tools\vendor\node_modules\jspdf')) {
+    # No es un fallo: jsPDF solo hace falta para ESTA prueba. El sitio publicado
+    # lo carga desde su CDN, asi que su ausencia no afecta al producto.
+    Write-Host '        Omitida: falta jsPDF para las pruebas' -ForegroundColor Yellow
+    Write-Host '        Instalalo con: cd _tools\vendor; npm install jspdf@2.5.2 --no-audit --no-fund' -ForegroundColor DarkGray
+    Anotar 'Certificado PDF' $true 'omitida (sin jsPDF)'
+} else {
+    $salida = & $node '_tools\test-certificado.js' 2>&1
+    $ok = ($LASTEXITCODE -eq 0)
+    $cuantas = @($salida | Select-String '^  OK ').Count
+    $malas = @($salida | Select-String '^  FALLO').Count
+    if ($ok) { Write-Host "        $cuantas comprobaciones del PDF, todas correctas" -ForegroundColor Green }
+    else { $salida | Select-String '^  FALLO|->' | ForEach-Object { Write-Host "        $_" -ForegroundColor Red } }
+    Anotar 'Certificado PDF' $ok "$cuantas comprobaciones, $malas fallos"
 }
 
 # ---------------------------------------------------------------- resumen
@@ -173,7 +194,9 @@ $fallos = @($resultados | Where-Object { $_.Estado -ne 'OK' }).Count
 Write-Host ''
 if ($fallos -eq 0) {
     Write-Host '  Todo correcto.' -ForegroundColor Green
-    Write-Host '  Recuerda: esto no comprueba el aspecto visual ni que el SQL se ejecute.' -ForegroundColor DarkGray
+    Write-Host '  El aspecto visual se revisa aparte (ver el README, seccion de revision visual).' -ForegroundColor DarkGray
+    Write-Host '  Y esto NO comprueba que el SQL se ejecute en PostgreSQL: eso se confirma' -ForegroundColor DarkGray
+    Write-Host '  aplicandolo en el SQL Editor y viendo que liste 10 tablas con rls_activo.' -ForegroundColor DarkGray
 } else {
     Write-Host "  $fallos comprobacion(es) con fallos." -ForegroundColor Red
 }

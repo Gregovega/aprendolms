@@ -124,8 +124,39 @@
     var lineasCurso = doc.splitTextToSize(curso, 200);
     doc.text(lineasCurso, CX, yCurso + 11, { align: 'center' });
 
+    /* ---- sello dorado ----
+       El certificado tenia un hueco vacio de unos 60mm entre el nombre del curso
+       y las firmas: el contenido quedaba apretado arriba y la composicion se veia
+       desequilibrada. Un sello en el centro es lo que llevan los certificados de
+       verdad y resuelve el vacio sin mover nada mas. */
+    var selloY = 137;
+    var selloR = 13.5;
+    doc.setDrawColor(ORO[0], ORO[1], ORO[2]);
+    doc.setLineWidth(0.9);
+    doc.circle(CX, selloY, selloR, 'S');
+    doc.setLineWidth(0.3);
+    doc.circle(CX, selloY, selloR - 2.4, 'S');
+    doc.setLineWidth(0.2);
+    doc.circle(CX, selloY, selloR - 3.1, 'S');
+
+    // Marca de verificacion dentro del sello
+    doc.setDrawColor(ORO[0], ORO[1], ORO[2]);
+    doc.setLineWidth(1.6);
+    try { doc.setLineCap('round'); } catch (e) { /* version antigua de jsPDF */ }
+    doc.line(CX - 5.4, selloY + 0.3, CX - 1.7, selloY + 4.1);
+    doc.line(CX - 1.7, selloY + 4.1, CX + 5.8, selloY - 3.8);
+    try { doc.setLineCap('butt'); } catch (e) { /* noop */ }
+
+    // Texto curvo no es posible con las fuentes basicas, asi que el lema va debajo
+    doc.setTextColor(ORO[0], ORO[1], ORO[2]);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setCharSpace(1.5);
+    doc.text('CURSO COMPLETADO', CX, selloY + selloR + 6, { align: 'center' });
+    doc.setCharSpace(0);
+
     /* ---- bloques de firma y fecha ---- */
-    var yBase = 163;
+    var yBase = 166;
     doc.setDrawColor(150, 160, 175);
     doc.setLineWidth(0.4);
 
@@ -163,7 +194,7 @@
     if (datos.codigo) {
       doc.setFontSize(7.6);
       doc.setTextColor(140, 150, 165);
-      doc.text('Código de verificación: ' + datos.codigo, CX, 191, { align: 'center' });
+      doc.text('Código de verificación: ' + datos.codigo, CX, 195, { align: 'center' });
     }
     return doc;
   }

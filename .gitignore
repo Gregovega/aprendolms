@@ -39,3 +39,10 @@ Desktop.ini
 # ===== NO ignorar (el frontend SÍ necesita su config pública) =====
 !assets/js/config.js
 !config/supabase.config.js
+
+# ===== Dependencias solo para las pruebas locales =====
+# jsPDF y sus dependencias, instaladas con npm para poder ejecutar
+# _tools/test-certificado.js. No hace falta en el sitio publicado: el navegador
+# carga jsPDF desde su CDN. Se reinstala con:
+#   cd _tools\vendor && npm install jspdf@2.5.2 --no-audit --no-fund
+_tools/vendor/

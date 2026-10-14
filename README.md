@@ -426,10 +426,22 @@ Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier host
   ```powershell
   node _tools\test-wistia.js             # 11 casos del detector de embeds de Wistia
   node cloudflare\test-routing.mjs       # 22 casos del enrutado de subdominios
+  node _tools\test-certificado.js        # 23 comprobaciones del PDF del certificado
   python _tools\check_html.py            # estructura HTML y recursos locales
   python _tools\check_wiring.py          # que cada getElementById encuentre su elemento
   python _tools\check_sql.py             # consistencia interna del esquema SQL
   python _tools\check_embeds.py          # que cada consulta anidada tenga su clave foránea
+  ```
+
+  `test-certificado.js` merece mención aparte: **ejecuta jsPDF de verdad** (no solo lee el
+  código), genera un PDF auténtico y comprueba dentro del archivo que el tamaño sea A4
+  apaisado, que haya una sola página y que el nombre del alumno, el curso, la academia y el
+  código de verificación estén presentes — también con acentos. Requiere instalar jsPDF una
+  vez (está en `.gitignore` porque el sitio publicado lo carga de su CDN):
+
+  ```powershell
+  cd _tools\vendor
+  npm install jspdf@2.5.2 --no-audit --no-fund
   ```
 
   `check_embeds.py` merece una explicación: nació de un **fallo real** que se había colado.
@@ -482,3 +494,24 @@ líneas. Se corrigió con `display: block`.
 
 > Nota: si lanzas Chrome desde dentro de un entorno restringido, puede necesitar permisos
 > ampliados para crear sus procesos auxiliares. Desde tu terminal normal no hace falta nada.
+
+### 3. Ver el PDF del certificado
+
+El certificado no es HTML: lo dibuja jsPDF con coordenadas. Que el texto esté dentro del
+archivo no significa que esté bien colocado, así que conviene mirarlo. Con el PDF generado
+por `test-certificado.js`, el kit de LibreOffice lo convierte en imagen (usa `pdfium`):
+
+```powershell
+node "<ruta-del-kit>\cli.js" render `
+  --input _tools\certificado-de-prueba.pdf `
+  --output-dir _tools\vista-certificado --dpi 130
+```
+
+Esto es lo que reveló el segundo fallo visual: el certificado tenía **un hueco vacío de unos
+60 mm** entre el nombre del curso y las firmas, con todo el contenido apretado en la mitad
+superior. Se resolvió añadiendo un **sello dorado** en el centro (tres círculos concéntricos,
+una marca de verificación y el lema *CURSO COMPLETADO*), que es lo que llevan los certificados
+de verdad.
+
+El mismo comando avisa si faltan fuentes: en la salida, `"missingFonts":[]` significa que
+todo se renderizó con las tipografías previstas.
