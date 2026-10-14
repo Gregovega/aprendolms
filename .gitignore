@@ -47,3 +47,8 @@ Desktop.ini
 #   cd _tools\vendor && npm install jspdf@2.5.2 --no-audit --no-fund
 _tools/vendor/
 _tools/certificado-de-prueba.pdf
+# ---- Archivos de prueba que crea el navegador al verificar el aspecto visual.
+# Nunca deben publicarse: son capturas de pantalla y arneses temporales.
+_tools/captura-*.png
+_tools/_*.html
+_tools/prueba-*.html

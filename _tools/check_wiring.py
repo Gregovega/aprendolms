@@ -15,19 +15,33 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='repla
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-PAGINAS = [
-    ('index.html',     ['catalogo.js', 'ui.js', 'supabase-client.js']),
-    ('curso.html',     ['curso.js', 'quiz.js', 'certificado.js', 'ui.js', 'supabase-client.js']),
-    ('admin.html',     ['admin.js', 'ui.js', 'supabase-client.js', 'wistia-player.js']),
-    ('verificar.html', ['verificar.js', 'ui.js', 'supabase-client.js']),
-]
-
 def leer(rel):
     p = os.path.join(RAIZ, rel.replace('/', os.sep))
     if not os.path.exists(p):
         return None
     with open(p, 'r', encoding='utf-8') as f:
         return f.read()
+
+# ---------------------------------------------------------------------------
+# Las paginas se DESCUBREN solas, y sus scripts se leen del propio HTML.
+#
+# Antes habia una lista fija con cuatro paginas. Al anadir cobros.html, el
+# comprobador siguio diciendo "todo correcto" sin haberla mirado ni una vez: la
+# pagina nueva entraba en produccion sin ninguna comprobacion de cableado.
+# Leyendo los <script> del HTML, una pagina nueva queda cubierta sola.
+# ---------------------------------------------------------------------------
+def scripts_de_pagina(html):
+    return re.findall(r'<script[^>]+src=["\']assets/js/([\w.\-]+)["\']', html or '')
+
+PAGINAS = []
+for nombre in sorted(os.listdir(RAIZ)):
+    if not nombre.endswith('.html'):
+        continue
+    PAGINAS.append((nombre, scripts_de_pagina(leer(nombre))))
+
+if not PAGINAS:
+    print('No se encontro ninguna pagina .html en la raiz del proyecto.')
+    sys.exit(1)
 
 def ids_de_html(t):
     return set(re.findall(r"""\bid\s*=\s*["']([^"']+)["']""", t))
@@ -103,5 +117,25 @@ for html, scripts in PAGINAS:
         print(f'  (aviso) ids declarados que ningun script referencia: {", ".join(huerfanos)}')
 
 print(f'\n{"="*60}')
+
+# ---------------------------------------------------------------------------
+# Aviso: scripts que NINGUNA pagina carga.
+# Si se crea un archivo en assets/js y se olvida incluirlo en el HTML, no da
+# ningun error visible: simplemente ese codigo nunca se ejecuta.
+# ---------------------------------------------------------------------------
+cargados = set()
+for _, scripts in PAGINAS:
+    cargados |= set(scripts)
+
+dir_js = os.path.join(RAIZ, 'assets', 'js')
+if os.path.isdir(dir_js):
+    huerfanos_js = sorted(f for f in os.listdir(dir_js)
+                          if f.endswith('.js') and f not in cargados)
+    if huerfanos_js:
+        print('AVISO: scripts que ninguna pagina carga (revisar si es a proposito):')
+        for f in huerfanos_js:
+            print(f'   [!] assets/js/{f}')
+
+print(f'Paginas comprobadas: {", ".join(p for p, _ in PAGINAS)}')
 print(f'RESULTADO: {"FALLO con " + str(total_fallos) + " problema(s)" if total_fallos else "TODO CABLEADO CORRECTAMENTE"}')
 sys.exit(1 if total_fallos else 0)

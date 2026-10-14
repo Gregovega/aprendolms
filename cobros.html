@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Los cobros no deben indexarse nunca: es información de dinero. -->
+  <meta name="robots" content="noindex">
+  <title>Cobros · Aprendo LMS</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/design-system.css">
+</head>
+<body>
+
+<!-- Cabecera y pie los dibuja UI (assets/js/ui.js) -->
+<div id="header-mount"></div>
+
+<main class="container container-wide mt-6">
+
+  <!-- ------------------------------------------------------------ cabecera -->
+  <div class="row-between mb-4">
+    <div>
+      <h1>Cobros</h1>
+      <p class="text-muted">
+        Aquí llegan los pagos de tus alumnos. Verifica que el dinero entró y aprueba para abrirle el curso.
+      </p>
+    </div>
+    <div class="row">
+      <button class="btn btn-ghost" type="button" id="btn-mis-datos">Mis datos de cobro</button>
+      <!-- Los navegadores no dejan sonar nada hasta que el usuario toca la página:
+           por eso el aviso sonoro se activa con este botón, una sola vez. -->
+      <button class="btn btn-secondary" type="button" id="btn-sonido"
+              aria-pressed="false" title="Activa el aviso sonoro cuando llegue un pago">
+        &#128276; Activar avisos
+      </button>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ resumen -->
+  <div class="grid grid-3" role="group" aria-label="Resumen de cobros">
+    <div class="stat">
+      <div class="stat-value" id="stat-pendientes">—</div>
+      <div class="stat-label">Pendientes de revisar</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-aprobados">—</div>
+      <div class="stat-label">Aprobados</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-rechazados">—</div>
+      <div class="stat-label">Rechazados</div>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ filtros -->
+  <div class="row-between mt-6 mb-4">
+    <div class="row" role="tablist" aria-label="Filtros de cobros">
+      <button class="btn btn-primary" type="button" id="filtro-pendientes"
+              role="tab" aria-selected="true" data-filtro="pendiente">Pendientes</button>
+      <button class="btn btn-ghost" type="button" id="filtro-duplicados"
+              role="tab" aria-selected="false" data-filtro="duplicado">Referencias repetidas</button>
+      <button class="btn btn-ghost" type="button" id="filtro-todos"
+              role="tab" aria-selected="false" data-filtro="todos">Todos</button>
+    </div>
+    <span class="text-faint text-xs" id="aviso-actualizado"></span>
+  </div>
+
+  <!-- Aquí se pintan los pagos -->
+  <div id="zona-pagos" class="stack"></div>
+
+</main>
+
+<div id="footer-mount"></div>
+
+<!-- El orden de carga importa: no lo cambies. -->
+<script src="assets/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/metodos-pago.js"></script>
+<script src="assets/js/cobros.js"></script>
+</body>
+</html>

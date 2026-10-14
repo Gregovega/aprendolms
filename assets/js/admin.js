@@ -635,6 +635,13 @@
       '<img id="cu-imagen-previa" class="hidden mb-4" alt="Vista previa de la foto" ' +
         'style="width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:1px solid var(--line)">' +
 
+      '<div class="card card-inset card-pad-sm mb-4" id="cu-precios-metodos">' +
+        '<div class="label mb-2">Cuánto cuesta en cada método de cobro</div>' +
+        '<div id="cu-precios-lista" class="text-faint text-sm">Cargando tus métodos de cobro…</div>' +
+        '<div class="text-faint text-xs mt-2">Deja un método vacío para no ofrecerlo en este curso. ' +
+        'Tus datos de cobro (banco, teléfono, cédula) se escriben una sola vez, en la pantalla de Cobros.</div>' +
+      '</div>' +
+
       '<div class="field"><span class="label">Estado</span>' +
         '<label class="check"><input type="checkbox" id="cu-publicado"' + (curso && curso.publicado ? ' checked' : '') + '>' +
         '<span>Publicado (visible en el catálogo)</span></label>' +
@@ -762,11 +769,75 @@
     if (inpImagen) inpImagen.addEventListener('input', pintarPreviaImagen);
     pintarPreviaImagen();
 
+    /* ---- cuánto cuesta este curso en cada método de cobro -------------------
+       Los datos de cobro (banco, teléfono, cédula) se escriben UNA vez en la
+       pantalla de Cobros. Aquí solo se pone el monto de ESTE curso en cada uno.
+       Se recuerda lo que había al abrir, para no tocar en la base lo que no ha
+       cambiado y para saber cuándo hay que borrar un precio (campo vaciado).
+    ------------------------------------------------------------------------ */
+    var zonaPrecios = panel.querySelector('#cu-precios-lista');
+    var preciosCargados = {};
+
+    async function cargarPreciosMetodos() {
+      if (!zonaPrecios) return;
+      try {
+        var metodos = await A.db.metodosPago();
+        var activos = metodos.filter(function (m) { return m.activo !== false; });
+
+        if (!activos.length) {
+          zonaPrecios.innerHTML = '<span class="text-faint">Todavía no tienes métodos de cobro. ' +
+            'Añádelos en la pantalla de <strong>Cobros</strong> y vuelve aquí.</span>';
+          return;
+        }
+
+        var precios = (curso && curso.id) ? await A.db.preciosDeCurso(curso.id) : [];
+        var porMetodo = {};
+        (precios || []).forEach(function (p) { porMetodo[p.metodo_id] = p.monto; });
+
+        zonaPrecios.innerHTML = activos.map(function (m) {
+          var v = porMetodo[m.id];
+          preciosCargados[m.id] = (v === undefined || v === null) ? '' : String(Number(v));
+          return '<div class="row-between mb-2" style="gap:12px">' +
+            '<span style="flex:1 1 auto;min-width:0">' + h(m.etiqueta) +
+              ' <span class="text-faint text-xs">' + h(m.moneda || '') + '</span></span>' +
+            '<input class="input" style="flex:0 0 130px" type="number" min="0" step="0.01" ' +
+              'inputmode="decimal" data-precio-metodo="' + h(m.id) + '" placeholder="—" ' +
+              'value="' + h(preciosCargados[m.id]) + '">' +
+            '</div>';
+        }).join('');
+      } catch (e) {
+        zonaPrecios.innerHTML = '<span class="text-sm" style="color:var(--danger)">' +
+          'No se pudieron cargar tus métodos de cobro: ' + h(A.traducirError(e)) + '</span>';
+      }
+    }
+
+    async function guardarPreciosMetodos(cursoId) {
+      if (!cursoId || !zonaPrecios) return;
+      var inputs = panel.querySelectorAll('[data-precio-metodo]');
+      for (var i = 0; i < inputs.length; i++) {
+        var id = inputs[i].getAttribute('data-precio-metodo');
+        var bruto = String(inputs[i].value || '').trim();
+        var antes = preciosCargados[id] || '';
+        if (bruto === antes) continue;                    // nada cambió
+
+        if (!bruto) {                                     // lo vaciaron: quitar
+          if (antes) await A.db.borrarPrecioCurso(cursoId, id);
+          continue;
+        }
+        var n = Number(bruto);
+        if (!isFinite(n) || n <= 0) continue;             // la base exige monto > 0
+        await A.db.guardarPrecioCurso(cursoId, id, n);
+      }
+    }
+
+    cargarPreciosMetodos();
+
     // Los campos que se guardan, en un solo sitio para no olvidar ninguno.
     function camposCurso() {
       return {
         nombre: inpNombre, slug: inpSlug, precio: inpPrecio, moneda: inpMoneda,
-        imagen: inpImagen, publicado: inpPublicado, zonaError: zonaError
+        imagen: inpImagen, publicado: inpPublicado, zonaError: zonaError,
+        guardarPrecios: guardarPreciosMetodos
       };
     }
 
@@ -877,12 +948,26 @@
 
     A.cargando(true, esNuevo ? 'Creando el curso…' : 'Guardando los cambios…');
     try {
+      var guardado;
       if (esNuevo) {
-        await A.db.crearCurso(datos);
-        A.aviso('Curso creado.', 'ok');
+        guardado = await A.db.crearCurso(datos);
       } else {
-        await A.db.actualizarCurso(curso.id, datos);
-        A.aviso('Cambios guardados.', 'ok');
+        guardado = await A.db.actualizarCurso(curso.id, datos);
+      }
+
+      // Los montos por método de cobro se guardan aparte. Si algo falla aquí, el
+      // curso ya está guardado y se avisa sin perder el trabajo hecho.
+      var cursoId = (guardado && guardado.id) || (curso && curso.id);
+      var falloPrecios = null;
+      if (typeof campos.guardarPrecios === 'function') {
+        try { await campos.guardarPrecios(cursoId); }
+        catch (e2) { falloPrecios = traducirErrorCurso(e2); }
+      }
+
+      A.aviso(esNuevo ? 'Curso creado.' : 'Cambios guardados.', 'ok');
+      if (falloPrecios) {
+        A.aviso('El curso se guardó, pero los precios por método de cobro no: ' + falloPrecios +
+                ' Vuelve a abrir el curso para reintentarlo.', 'error', 12000);
       }
       capa.cerrar(true);
       await cargarPanel();

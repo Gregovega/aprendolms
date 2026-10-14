@@ -354,6 +354,154 @@
       var r = await client.from('ajustes').update(cambios).eq('id', 1).select().single();
       if (r.error) throw r.error;
       return r.data;
+    },
+
+    /* ------------------------------------------------ cobro manual de cursos */
+
+    /** Todos los métodos de cobro (el administrador los ve aunque estén apagados). */
+    async metodosPago() {
+      var r = await client.from('metodos_pago').select('*').order('orden').order('creado_en');
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+    async crearMetodoPago(datos) {
+      var r = await client.from('metodos_pago').insert(datos).select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async actualizarMetodoPago(id, cambios) {
+      var r = await client.from('metodos_pago').update(cambios).eq('id', id).select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async borrarMetodoPago(id) {
+      var r = await client.from('metodos_pago').delete().eq('id', id);
+      if (r.error) throw r.error;
+      return true;
+    },
+
+    /** Precios de un curso, con el método ya resuelto para poder pintarlo. */
+    async preciosDeCurso(cursoId) {
+      var r = await client.from('curso_metodos_pago')
+        .select('id, monto, activo, metodo_id, metodos_pago(etiqueta, moneda, activo)')
+        .eq('curso_id', cursoId);
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+    async guardarPrecioCurso(cursoId, metodoId, monto) {
+      var r = await client.from('curso_metodos_pago')
+        .upsert({ curso_id: cursoId, metodo_id: metodoId, monto: monto }, { onConflict: 'curso_id,metodo_id' })
+        .select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async borrarPrecioCurso(cursoId, metodoId) {
+      var r = await client.from('curso_metodos_pago').delete()
+        .eq('curso_id', cursoId).eq('metodo_id', metodoId);
+      if (r.error) throw r.error;
+      return true;
+    },
+
+    /**
+     * Métodos de cobro disponibles para un curso, ya con el precio de ESE curso.
+     * Es lo que ve el alumno al pulsar «Inscríbete».
+     */
+    async metodosDeCurso(cursoId) {
+      var r = await client.from('curso_metodos_pago')
+        .select('monto, metodo_id, metodos_pago(etiqueta, moneda, instrucciones, campos, activo)')
+        .eq('curso_id', cursoId).eq('activo', true);
+      if (r.error) throw r.error;
+      return (r.data || []).filter(function (f) {
+        return f.metodos_pago && f.metodos_pago.activo !== false;
+      });
+    },
+
+    /** Pagos para la pantalla de verificación. El administrador los ve todos. */
+    async pagos(limite) {
+      // duplicado_de apunta a otro pago, así que se puede anidar: en UNA sola
+      // consulta viene el detalle del pago anterior con esa misma referencia.
+      var r = await client.from('pagos')
+        .select('id, estado, referencia, monto, moneda, metodo_etiqueta, captura_url, motivo, ' +
+                'duplicado_de, creado_en, revisado_en, user_id, curso_id, ' +
+                'perfiles(nombre_completo, email), cursos(nombre, slug), ' +
+                'duplicado:pagos!duplicado_de(id, referencia, creado_en, estado, cursos(nombre, slug))')
+        .order('creado_en', { ascending: false })
+        .limit(limite || 200);
+      if (!r.error) return r.data || [];
+
+      // Si ese anidamiento no se puede resolver, se pide lo básico; el detalle
+      // del duplicado se consulta aparte Solo cuando hace falta (detalleDuplicado).
+      var base = await client.from('pagos')
+        .select('id, estado, referencia, monto, moneda, metodo_etiqueta, captura_url, motivo, ' +
+                'duplicado_de, creado_en, revisado_en, user_id, curso_id, ' +
+                'perfiles(nombre_completo, email), cursos(nombre, slug)')
+        .order('creado_en', { ascending: false })
+        .limit(limite || 200);
+      if (base.error) throw base.error;
+      return base.data || [];
+    },
+    async crearPago(datos) {
+      var r = await client.from('pagos').insert(datos).select().single();
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async misPagos() {
+      var r = await client.from('pagos')
+        .select('id, estado, referencia, motivo, monto, moneda, metodo_etiqueta, creado_en, revisado_en, ' +
+                'duplicado_de, cursos(nombre, slug)')
+        .order('creado_en', { ascending: false });
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+    /** Aprobar o rechazar vive en el servidor: aquí solo se llama. */
+    async aprobarPago(pagoId, nota) {
+      var r = await client.rpc('aprobar_pago', { p_pago_id: pagoId, p_nota: nota || null });
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async rechazarPago(pagoId, motivo) {
+      var r = await client.rpc('rechazar_pago', { p_pago_id: pagoId, p_motivo: motivo });
+      if (r.error) throw r.error;
+      return r.data;
+    },
+    async detalleDuplicado(pagoId) {
+      var r = await client.rpc('detalle_duplicado', { p_pago_id: pagoId });
+      if (r.error) throw r.error;
+      return r.data;
+    },
+
+    /* ------------------------------------------------- comprobantes (capturas) */
+
+    /**
+     * Sube la captura al almacén privado y devuelve su ruta.
+     * Cada archivo va dentro de la carpeta del propio alumno, que es lo que
+     * exige la política del almacén: capturas/<uuid-del-alumno>/<aleatorio>.jpg
+     */
+    async subirCaptura(archivo, userId) {
+      var ext = (String(archivo.name || '').split('.').pop() || 'jpg').toLowerCase();
+      if (!/^(jpg|jpeg|png|webp|heic|heif)$/.test(ext)) ext = 'jpg';
+      var azar = (window.crypto && window.crypto.randomUUID)
+        ? window.crypto.randomUUID()
+        : String(Date.now()) + '-' + Math.random().toString(36).slice(2);
+      var ruta = userId + '/' + azar + '.' + ext;
+
+      var r = await client.storage.from('capturas').upload(ruta, archivo, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: archivo.type || 'image/jpeg'
+      });
+      if (r.error) throw r.error;
+      return ruta;
+    },
+    /**
+     * Enlace temporal para ver una captura. El cubo es privado a propósito:
+     * el comprobante de un alumno no puede quedar en una dirección pública.
+     */
+    async urlCaptura(ruta, segundos) {
+      if (!ruta) return null;
+      var r = await client.storage.from('capturas').createSignedUrl(ruta, segundos || 3600);
+      if (r.error) throw r.error;
+      return r.data ? r.data.signedUrl : null;
     }
   };
 

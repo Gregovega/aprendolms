@@ -27,6 +27,9 @@
       '<a href="index.html"' + (activo === 'cursos' ? ' class="active"' : '') + '>Cursos</a>' +
       '<a href="verificar.html"' + (activo === 'verificar' ? ' class="active"' : '') + '>Verificar certificado</a>' +
       '<a href="admin.html" id="nav-admin" class="hidden">Administración</a>' +
+      // Cobros lleva el número de pagos pendientes entre paréntesis: así se ve
+      // desde cualquier página, sin tener que entrar a mirar.
+      '<a href="cobros.html" id="nav-cobros" class="hidden">Cobros<span id="nav-cobros-n"> </span></a>' +
       '</nav>' +
       '<span class="spacer"></span>' +
       '<div id="zona-sesion" class="row" style="gap:8px"></div>' +
@@ -76,11 +79,28 @@
       location.href = 'index.html';
     });
 
-    // Mostrar "Administración" solo a los admins
+    // Mostrar "Administración" y "Cobros" solo a los admins
     var esAdmin = false;
     try { esAdmin = await A.auth.esAdmin(); } catch (e) { /* noop */ }
     var na = document.getElementById('nav-admin');
     if (na && esAdmin) na.classList.remove('hidden');
+
+    var nc = document.getElementById('nav-cobros');
+    if (nc && esAdmin) {
+      nc.classList.remove('hidden');
+      // Contar los pendientes no debe romper la cabecera de ninguna página: si
+      // falla (sin red, por ejemplo), el enlace se queda sin número y ya está.
+      try {
+        var r = await A.client.from('pagos').select('id').eq('estado', 'pendiente');
+        var n = (r.data || []).length;
+        var hueco = document.getElementById('nav-cobros-n');
+        if (hueco && n > 0) {
+          hueco.textContent = ' (' + n + ')';
+          hueco.style.color = 'var(--accent)';
+          hueco.style.fontWeight = '700';
+        }
+      } catch (e) { /* la cabecera funciona igual sin el número */ }
+    }
   }
 
   /* ------------------------------------------------------------ modal de auth */
