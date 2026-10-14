@@ -165,7 +165,9 @@ $conf = LeerEnv
 $guardado = Limpiar ([string]$conf['SUPABASE_ACCESS_TOKEN'])
 
 $usar = ''
-if (-not [string]::IsNullOrWhiteSpace($Token)) {
+if ($PSBoundParameters.ContainsKey('Token')) {
+    # Si el token llega como argumento se valida y se falla: nunca se abre el aviso
+    # interactivo, porque en uso automatico se quedaria colgado esperando respuesta.
     $usar = Limpiar $Token
     $p = Revisar $usar
     if (-not [string]::IsNullOrWhiteSpace($p)) { Mal "El token no sirve: $p"; exit 1 }
