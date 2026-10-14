@@ -273,6 +273,20 @@ function Write-FrontendConfig([string]$url, [string]$anonKey, [string]$academy, 
     if (-not (Test-Path $ConfigDir)) { New-Item -ItemType Directory -Path $ConfigDir -Force | Out-Null }
 
     $esc = { param($s) ([string]$s).Replace('\', '\\').Replace("'", "\'") }
+
+    # La clave PUBLICA de los avisos push no se puede inventar de nuevo: su pareja
+    # privada vive como secreto en Supabase y firma los avisos. Si este generador
+    # la borrara, los avisos del telefono dejarian de funcionar sin que nadie se
+    # enterara hasta que un pago no llegara. Asi que se CONSERVA la que ya hubiera.
+    $vapid = ''
+    if (Test-Path $ConfigPath) {
+        $previo = [System.IO.File]::ReadAllText($ConfigPath, (New-Object System.Text.UTF8Encoding($false)))
+        $m = [regex]::Match($previo, "VAPID_PUBLICA:\s*'([^']+)'")
+        if ($m.Success) { $vapid = $m.Groups[1].Value; Write-Ok 'Se conserva la clave publica de los avisos push.' }
+    }
+    $extraVapid = ''
+    if ($vapid) { $extraVapid = ",`n  VAPID_PUBLICA: '$vapid'" }
+
     $content = @"
 /* ============================================================
    APRENDO LMS — configuración del frontend
@@ -289,7 +303,7 @@ window.APRENDO_CONFIG = {
   SUPABASE_URL: '$(& $esc $url)',
   SUPABASE_ANON_KEY: '$(& $esc $anonKey)',
   ACADEMY_NAME: '$(& $esc $academy)',
-  ROOT_DOMAIN: '$(& $esc $rootDomain)'
+  ROOT_DOMAIN: '$(& $esc $rootDomain)'$extraVapid
 };
 "@
     $enc = New-Object System.Text.UTF8Encoding($false)

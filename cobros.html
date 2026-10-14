@@ -32,11 +32,14 @@
       <!-- Los navegadores no dejan sonar nada hasta que el usuario toca la página:
            por eso el aviso sonoro se activa con este botón, una sola vez. -->
       <button class="btn btn-secondary" type="button" id="btn-sonido"
-              aria-pressed="false" title="Activa el aviso sonoro cuando llegue un pago">
+              aria-pressed="false" title="Activa el sonido y los avisos en el teléfono">
         &#128276; Activar avisos
       </button>
     </div>
   </div>
+
+  <!-- Estado de los avisos en ESTE teléfono. Se rellena desde cobros.js. -->
+  <p class="text-faint text-xs mb-4" id="estado-avisos"></p>
 
   <!-- ------------------------------------------------------------ resumen -->
   <div class="grid grid-3" role="group" aria-label="Resumen de cobros">
@@ -79,6 +82,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="assets/js/supabase-client.js"></script>
 <script src="assets/js/ui.js"></script>
+<script src="assets/js/avisos.js"></script>
 <script src="assets/js/metodos-pago.js"></script>
 <script src="assets/js/cobros.js"></script>
 </body>

@@ -52,3 +52,6 @@ _tools/certificado-de-prueba.pdf
 _tools/captura-*.png
 _tools/_*.html
 _tools/prueba-*.html
+# ---- Caché de la CLI de Supabase (creada al desplegar funciones).
+# Puede contener datos de la sesión, así que nunca se publica.
+supabase/.temp/

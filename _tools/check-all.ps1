@@ -58,7 +58,12 @@ if (-not $node) {
     Anotar 'Sintaxis JS' $false 'node no encontrado'
     Write-Host '        node no encontrado' -ForegroundColor Red
 } else {
-    $js = Get-ChildItem 'assets\js' -Filter '*.js' -ErrorAction SilentlyContinue | Sort-Object Name
+    # assets/js MAS sw.js. El trabajador de servicio vive en la RAIZ a proposito:
+    # desde ahi su alcance cubre todo el sitio, que es lo que necesita para
+    # recibir los avisos. Si no se incluyera aqui, quedaria sin comprobar.
+    $js = @(Get-ChildItem 'assets\js' -Filter '*.js' -ErrorAction SilentlyContinue)
+    if (Test-Path 'sw.js') { $js += Get-Item 'sw.js' }
+    $js = $js | Sort-Object Name
     $malos = @()
     foreach ($f in $js) {
         & $node --check $f.FullName 2>$null | Out-Null

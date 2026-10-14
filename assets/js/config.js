@@ -13,5 +13,9 @@ window.APRENDO_CONFIG = {
   SUPABASE_URL: 'https://wkqmgkevttvmbqrpxguk.supabase.co',
   SUPABASE_ANON_KEY: 'sb_publishable_9Sf5Pa4591TtFnsUSJjhDQ_iiksSSMZ',
   ACADEMY_NAME: '',
-  ROOT_DOMAIN: ''
+  ROOT_DOMAIN: '',
+  // Clave PÚBLICA de los avisos push. Es pública a propósito: el navegador la
+  // necesita para suscribirse. La privada, que es la que firma los avisos, vive
+  // como secreto en Supabase y NUNCA puede estar aquí.
+  VAPID_PUBLICA: 'BEeZglwE_Lba3Cmo3rhxRPyYbk35csvwpQzGozuCZfZWtBkFXzXfmkehzD6fyqgBxVkpvZyAvXi6IiG2XWNjD8o'
 };

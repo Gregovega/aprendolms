@@ -315,6 +315,80 @@
     }
   }
 
+  /* ------------------------------------------------------------------ avisos */
+
+  /**
+   * Enciende o apaga los avisos de ESTE teléfono.
+   *
+   * Son dos cosas a la vez, y a propósito: el sonido (inmediato, mientras la
+   * pantalla está abierta) y la notificación del sistema (llega aunque esté
+   * cerrada). Un solo toque sirve para las dos porque los navegadores exigen un
+   * gesto real tanto para permitir notificaciones como para dejar sonar audio.
+   *
+   * Si el navegador no admite notificaciones, el sonido se activa igual: nunca
+   * se queda uno sin ninguna forma de enterarse de que entró dinero.
+   */
+  async function alternarAvisos() {
+    if (estado.sonidoActivo) {
+      estado.sonidoActivo = false;
+      if (window.Avisos && window.Avisos.soportado()) {
+        try { await window.Avisos.desactivar(); } catch (e) { /* no es grave */ }
+      }
+      await pintarEstadoAvisos();
+      A.aviso('Avisos apagados en este teléfono. El contador de pendientes sigue funcionando.', 'warn');
+      return;
+    }
+
+    // 1) El sonido primero: es lo único que funciona con seguridad.
+    var sono = activarSonido();
+    if (sono) campana();   // suena una vez, para que sepas cómo se oye
+
+    // 2) Y la notificación del sistema, si el navegador la admite.
+    var nota = '';
+    if (window.Avisos && window.Avisos.soportado()) {
+      try {
+        await window.Avisos.activar();
+        nota = ' También llegarán al teléfono aunque cierres la página.';
+      } catch (e) {
+        nota = ' (Los avisos del teléfono no se pudieron activar: ' + A.traducirError(e) + ')';
+      }
+    } else {
+      nota = ' Este navegador no admite avisos del sistema: deja la pantalla abierta para oír el sonido.';
+    }
+
+    await pintarEstadoAvisos();
+    if (sono) A.aviso('Avisos activados.' + nota, 'ok', 11000);
+  }
+
+  /** Línea de estado bajo la cabecera: qué está activo en este teléfono. */
+  async function pintarEstadoAvisos() {
+    var z = $('estado-avisos');
+    var b = $('btn-sonido');
+    if (!z || !b) return;
+
+    var e = (window.Avisos && window.Avisos.soportado())
+      ? await window.Avisos.estado()
+      : 'no-soportado';
+
+    var n = (window.Avisos && window.Avisos.cuantos) ? await window.Avisos.cuantos() : null;
+    var cuales = (n === null || n === undefined) ? ''
+      : ' Hay ' + n + (n === 1 ? ' teléfono suscrito' : ' teléfonos suscritos') + '.';
+
+    var textos = {
+      'no-soportado': 'Este navegador no admite avisos del sistema. El sonido funciona con la pantalla abierta.',
+      'sin-clave': 'Falta configurar la clave de los avisos.',
+      'permiso-no': 'Bloqueaste las notificaciones de este sitio. Actívalas en los ajustes del navegador.',
+      'apagado': 'Los avisos del teléfono están apagados en este dispositivo. Pulsa «Activar avisos».' + cuales,
+      'encendido': 'Este teléfono avisará cada vez que entre un pago, aunque cierres la página.' + cuales
+    };
+    z.textContent = textos[e] || '';
+
+    var encendido = estado.sonidoActivo || e === 'encendido';
+    b.className = 'btn ' + (encendido ? 'btn-primary' : 'btn-secondary');
+    b.setAttribute('aria-pressed', encendido ? 'true' : 'false');
+    b.innerHTML = encendido ? '&#128276; Avisos activados' : '&#128276; Activar avisos';
+  }
+
   /* ------------------------------------------------------------------ eventos */
 
   function conectar() {
@@ -347,24 +421,7 @@
       });
     });
 
-    $('btn-sonido').addEventListener('click', function () {
-      var b = $('btn-sonido');
-      if (estado.sonidoActivo) {
-        estado.sonidoActivo = false;
-        b.className = 'btn btn-secondary';
-        b.setAttribute('aria-pressed', 'false');
-        b.innerHTML = '&#128276; Activar avisos';
-        A.aviso('Aviso sonoro apagado. El contador de pendientes sigue funcionando.', 'warn');
-        return;
-      }
-      if (activarSonido()) {
-        b.className = 'btn btn-primary';
-        b.setAttribute('aria-pressed', 'true');
-        b.innerHTML = '&#128276; Avisos activados';
-        campana();   // suena una vez para que sepas cómo se oye
-        A.aviso('Aviso sonoro activado. Deja esta pestaña abierta para no perderte ningún pago.', 'ok', 8000);
-      }
-    });
+    $('btn-sonido').addEventListener('click', alternarAvisos);
 
     $('btn-mis-datos').addEventListener('click', function () {
       window.MetodosPago.abrirDrawer({
@@ -400,6 +457,7 @@
     if (!sesion) return;
 
     conectar();
+    await pintarEstadoAvisos();
     await cargar({ silencioso: false });
     reiniciarTemporizador();
   })();
