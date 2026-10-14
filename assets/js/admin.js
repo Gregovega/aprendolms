@@ -966,14 +966,31 @@
     var panel = capa.panel;
     var cuerpo = panel.querySelector('.drawer-body');
 
-    /* --- clics ------------------------------------------------------------- */
-    cuerpo.addEventListener('click', function (e) {
-      var b = ancestroConAccion(e.target, cuerpo);
+    /* --- clics -------------------------------------------------------------
+       El escuchador va en el PANEL COMPLETO, no solo en .drawer-body.
+
+       Motivo (era un fallo real): "Guardar preguntas" y "Borrar todas" viven en
+       el PIE del panel, y en crearCapa el pie es un HERMANO de .drawer-body, no
+       un hijo. Con el escuchador puesto solo en el cuerpo, pulsar "Guardar
+       preguntas" no hacia absolutamente NADA: ni guardaba, ni avisaba, ni daba
+       error. Costaba muchisimo de diagnosticar precisamente por ese silencio.
+
+       El panel de curso ya lo hacia bien (conectarDrawerCurso usa panel). Al
+       detectar el fallo se comprobaron los seis escuchadores de clic de admin.js
+       y este era el unico atado al cuerpo.
+
+       Como limite de las busquedas se usa tambien el panel: si se usara el
+       cuerpo, al pulsar un boton del pie el recorrido hacia arriba no encontraria
+       nunca ese limite y podria acabar leyendo un data-idx de otra parte de la
+       pagina.
+    ------------------------------------------------------------------------ */
+    panel.addEventListener('click', function (e) {
+      var b = ancestroConAccion(e.target, panel);
       if (!b) return;
       var accion = b.getAttribute('data-accion');
 
-      var bloqueLec = ancestroConDato(b, 'data-idx', cuerpo);
-      var bloqueQ = ancestroConDato(b, 'data-qidx', cuerpo);
+      var bloqueLec = ancestroConDato(b, 'data-idx', panel);
+      var bloqueQ = ancestroConDato(b, 'data-qidx', panel);
       var idx = bloqueLec ? parseInt(bloqueLec.getAttribute('data-idx'), 10) : -1;
       var qi = bloqueQ ? parseInt(bloqueQ.getAttribute('data-qidx'), 10) : -1;
 

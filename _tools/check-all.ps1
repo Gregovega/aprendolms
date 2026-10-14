@@ -53,7 +53,7 @@ Write-Host ('  ' + ('-' * 34)) -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------- 1. JavaScript
 Write-Host ''
-Write-Host '  [1/9] Sintaxis JavaScript' -ForegroundColor Cyan
+Write-Host '  [1/10] Sintaxis JavaScript' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Sintaxis JS' $false 'node no encontrado'
     Write-Host '        node no encontrado' -ForegroundColor Red
@@ -70,7 +70,7 @@ if (-not $node) {
 
 # ---------------------------------------------------------------- 2. HTML
 Write-Host ''
-Write-Host '  [2/9] Estructura de las paginas HTML' -ForegroundColor Cyan
+Write-Host '  [2/10] Estructura de las paginas HTML' -ForegroundColor Cyan
 if (-not $python) {
     Anotar 'Estructura HTML' $false 'Python no encontrado (es opcional)'
     Write-Host '        Python no encontrado; se omite' -ForegroundColor Yellow
@@ -86,7 +86,7 @@ if (-not $python) {
 
 # ---------------------------------------------------------------- 3. Cableado
 Write-Host ''
-Write-Host '  [3/9] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
+Write-Host '  [3/10] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_wiring.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -103,7 +103,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 4. SQL
 Write-Host ''
-Write-Host '  [4/9] Consistencia del esquema SQL' -ForegroundColor Cyan
+Write-Host '  [4/10] Consistencia del esquema SQL' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_sql.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -119,7 +119,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 5. Wistia
 Write-Host ''
-Write-Host '  [5/9] Deteccion de embeds de Wistia' -ForegroundColor Cyan
+Write-Host '  [5/10] Deteccion de embeds de Wistia' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node '_tools\test-wistia.js' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -132,7 +132,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 6. Worker
 Write-Host ''
-Write-Host '  [6/9] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
+Write-Host '  [6/10] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node 'cloudflare\test-routing.mjs' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -145,7 +145,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 7. Anidamientos
 Write-Host ''
-Write-Host '  [7/9] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
+Write-Host '  [7/10] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_embeds.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -162,7 +162,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 8. Certificado
 Write-Host ''
-Write-Host '  [8/9] Generacion del certificado PDF (con jsPDF de verdad)' -ForegroundColor Cyan
+Write-Host '  [8/10] Generacion del certificado PDF (con jsPDF de verdad)' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Certificado PDF' $false 'node no encontrado'
 } elseif (-not (Test-Path '_tools\vendor\node_modules\jspdf')) {
@@ -183,7 +183,7 @@ if (-not $node) {
 
 # ---------------------------------------------------------------- 9. Panel
 Write-Host ''
-Write-Host '  [9/9] Funciones puras del panel (slug y JSON de la IA)' -ForegroundColor Cyan
+Write-Host '  [9/10] Funciones puras del panel (slug y JSON de la IA)' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node '_tools\test-admin.js' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -194,6 +194,20 @@ if ($node) {
     Anotar 'Panel (funciones puras)' $ok "$cuantas comprobaciones, $malas fallos"
 } else {
     Anotar 'Panel (funciones puras)' $false 'node no encontrado'
+}
+
+# ---------------------------------------------------------------- 10. Drawers
+Write-Host ''
+Write-Host '  [10/10] Botones de los paneles deslizantes' -ForegroundColor Cyan
+if ($python) {
+    $salida = & $python '_tools\check_drawers.py' 2>&1
+    $ok = ($LASTEXITCODE -eq 0)
+    $cuantas = @($salida | Select-String '^   \w+.*cubierta').Count
+    if ($ok) { Write-Host "        $cuantas botones del pie, todos con manejador" -ForegroundColor Green }
+    else { $salida | Select-String '\[X\]' | ForEach-Object { Write-Host "        $_" -ForegroundColor Red } }
+    Anotar 'Botones del panel' $ok "$cuantas botones del pie"
+} else {
+    Anotar 'Botones del panel' $false 'Python no encontrado'
 }
 
 # ---------------------------------------------------------------- resumen
