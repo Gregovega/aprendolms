@@ -315,10 +315,27 @@ En el **SQL Editor** del proyecto Supabase, pega y ejecuta
 `rls_activo = true`**.
 
 ### 2. Crear tu usuario
-Abre `index.html` → **Crear cuenta** con tu correo.
+Abre la web → **Crear cuenta** con tu correo. Entras directamente, sin esperar correo.
 
-> Si Supabase te pide confirmar el correo, ve a **Authentication → Users** y
-> confírmalo a mano, o desactiva la confirmación en **Authentication → Providers → Email**.
+> **La confirmación por correo está desactivada a propósito** (`mailer_autoconfirm = true`).
+> Motivo, comprobado en este proyecto:
+>
+> - Supabase regala **2 correos por hora** con su servidor compartido. Con eso solo
+>   podrías dar de alta 2 alumnos por hora, y una prueba del propio proyecto agotó la
+>   cuota y bloqueó un registro legítimo.
+> - La URL del sitio venía en `http://localhost:3000` (el valor por defecto), así que el
+>   enlace de confirmación apuntaba al ordenador de quien se registraba: **aunque
+>   llegara el correo, el enlace no funcionaría**.
+> - Y sobre todo: **el acceso no depende de confirmar el correo**, sino de la inscripción.
+>   Sin inscripción activa el alumno ve *"Aún no tienes acceso a este curso"*. La
+>   confirmación no protegía nada aquí.
+>
+> **Si algún día quieres verificación por correo**: configura tu propio SMTP en
+> *Authentication → Emails* (Gmail, Resend, Brevo…) y pon `mailer_autoconfirm` en `false`.
+> Con el servidor propio desaparece el límite de 2 por hora.
+
+> Ojo: **la recuperación de contraseña sí envía correo**, así que sigue sujeta a ese
+> límite de 2 por hora mientras no configures un SMTP propio.
 
 ### 3. Hacerte administrador
 Esto es un paso obligatorio y se hace una sola vez:
