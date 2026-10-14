@@ -16,12 +16,33 @@
 [CmdletBinding()]
 param(
     [string]$Mensaje,
-    [switch]$SinCommit
+    [switch]$SinCommit,
+
+    # Este parametro NO se usa: existe solo para atrapar el error mas facil de
+    # cometer. Es natural pensar que el token se pasa al script que publica, y no:
+    # el token va en publicar.cmd / set-credentials.cmd. Sin declararlo aqui,
+    # PowerShell responde "A parameter cannot be found that matches parameter name
+    # 'GithubToken'" en rojo, que no explica nada. Declarado, podemos dar una
+    # instruccion util.
+    [string]$GithubToken
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch { }
+
+if ($PSBoundParameters.ContainsKey('GithubToken')) {
+    Write-Host ''
+    Write-Host '  [AVISO] El token no se pasa a este script.' -ForegroundColor Yellow
+    Write-Host ''
+    Write-Host '  Usa este comando, que te lo pide y hace todo lo demas:' -ForegroundColor White
+    Write-Host ''
+    Write-Host '      .\_tools\publicar.cmd' -ForegroundColor Cyan
+    Write-Host ''
+    Write-Host '  (El token no queda en el historial de PowerShell si lo pegas ahi.)' -ForegroundColor DarkGray
+    Write-Host ''
+    exit 1
+}
 
 $Root = if ($PSScriptRoot) { Split-Path -Parent $PSScriptRoot } else { (Get-Location).Path }
 $EnvPath = Join-Path $Root '.env'

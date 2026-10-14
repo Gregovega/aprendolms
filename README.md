@@ -198,11 +198,29 @@ cd "G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
 
 ### Publicar en GitHub
 
+**Un solo comando.** Abre una terminal nueva (para que tome el `git` del PATH) y ejecuta:
+
 ```powershell
-# Abre una terminal NUEVA para que tome el git del PATH
-.\_tools\set-credentials.cmd -GithubToken "github_pat_..."
-.\_tools\push.cmd
+.\_tools\publicar.cmd
 ```
+
+Te pedirá el token y hará todo lo demás. **No se ve mientras lo pegas** (es normal) y
+**no queda en el historial de PowerShell**, porque no se escribe en la línea de comandos.
+Si ya hay un token guardado y válido, no pregunta nada y publica directamente.
+
+Qué comprueba antes de subir nada:
+
+| Comprobación | Para qué |
+|---|---|
+| Limpia comillas y espacios | Que un copiar-y-pegar descuidado no rompa el token |
+| Rechaza el texto de ejemplo | `github_pat_...` tiene 14 caracteres; uno real ronda los 90 |
+| Rechaza tokens cortados | Avisa de la longitud real esperada |
+| Prueba el token contra GitHub | Si da 401, se detiene con el motivo |
+| **Aborta si `.env` está rastreado** | Tus secretos jamás se publican |
+| No hace `force-push` | Si el remoto avanzó, se detiene y te dice qué hacer |
+
+> ⚠️ **El token NO se pasa a `push.cmd`.** `push.cmd` solo publica; lee el token de `.env`.
+> Si se lo pasas por costumbre, ahora te lo dice con un mensaje claro en vez de un error rojo.
 
 El token queda guardado **solo en `.env`**. No se escribe en `.git/config` ni en la URL
 del remoto: viaja en una cabecera temporal durante el push.

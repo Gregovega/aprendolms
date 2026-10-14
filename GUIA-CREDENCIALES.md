@@ -261,13 +261,17 @@ El token es la "llave" que autoriza subir archivos. Se crea así:
 
 ### Publicar
 
-Abre una **terminal nueva** y ejecuta:
+Abre una **terminal nueva** y ejecuta **un solo comando**:
 
 ```powershell
 cd "G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
-.\_tools\set-credentials.cmd -GithubToken "github_pat_..."
-.\_tools\push.cmd
+.\_tools\publicar.cmd
 ```
+
+Te pedira el token y hara todo lo demas. No se ve al pegarlo y no queda en el
+historial de PowerShell.
+
+OJO: el token NO se pasa a `push.cmd`. Ese script solo publica; lee el token de `.env`.
 
 `push.ps1` hace cuatro comprobaciones antes de subir nada:
 1. Valida el token contra la API de GitHub.
