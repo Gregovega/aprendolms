@@ -2319,4 +2319,26 @@
       A.cargando(false);
     }
   });
+  /* ------------------------------------------------- enganche para las pruebas */
+  // Expone UNICAMENTE funciones puras (sin estado, sin tocar la interfaz ni la
+  // base de datos) para que _tools/test-admin.js pueda probarlas.
+  //
+  // Solo se activa si la prueba lo pide expresamente, asi que al abrir el panel
+  // en el navegador no existe nada de esto. Se limita a las dos partes mas
+  // delicadas: la normalizacion del slug y la validacion del JSON que devuelve
+  // la IA, que es donde un fallo silencioso haria mas dano.
+  if (window.__APRENDO_EXPONER_PARA_PRUEBAS__) {
+    window.__PRUEBAS_ADMIN__ = {
+      sinAcentos: sinAcentos,
+      normalizarSlug: normalizarSlug,
+      normalizarSlugSuave: normalizarSlugSuave,
+      slugValido: slugValido,
+      limpiarJson: limpiarJson,
+      extraerJson: extraerJson,
+      indiceRespuesta: indiceRespuesta,
+      analizarPreguntas: analizarPreguntas,
+      esArray: esArray,
+      texto: texto
+    };
+  }
 })();

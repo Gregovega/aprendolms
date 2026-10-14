@@ -55,7 +55,7 @@ se genera en el navegador con jsPDF.
 - **Soporte de las DOS generaciones de Wistia** (ver más abajo: era un problema real).
 - **Worker de Cloudflare** para los subdominios por curso, con su lógica de enrutado
   probada (22 casos).
-- **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 7 comprobaciones del
+- **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 9 comprobaciones del
   proyecto de una vez.
 
 ### ⏳ Pendiente
@@ -427,6 +427,7 @@ Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier host
   node _tools\test-wistia.js             # 11 casos del detector de embeds de Wistia
   node cloudflare\test-routing.mjs       # 22 casos del enrutado de subdominios
   node _tools\test-certificado.js        # 23 comprobaciones del PDF del certificado
+  node _tools\test-admin.js              # 74 comprobaciones del slug y del JSON de la IA
   python _tools\check_html.py            # estructura HTML y recursos locales
   python _tools\check_wiring.py          # que cada getElementById encuentre su elemento
   python _tools\check_sql.py             # consistencia interna del esquema SQL
@@ -457,7 +458,7 @@ Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier host
 
 ## Revisar el aspecto visual
 
-Ninguna de las 7 comprobaciones anteriores mira cómo se ve la interfaz. Para eso hay dos vías.
+Ninguna de las 9 comprobaciones anteriores mira cómo se ve la interfaz. Para eso hay dos vías.
 
 ### 1. La página de referencia del diseño
 

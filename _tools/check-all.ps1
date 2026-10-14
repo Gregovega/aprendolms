@@ -53,7 +53,7 @@ Write-Host ('  ' + ('-' * 34)) -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------- 1. JavaScript
 Write-Host ''
-Write-Host '  [1/8] Sintaxis JavaScript' -ForegroundColor Cyan
+Write-Host '  [1/9] Sintaxis JavaScript' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Sintaxis JS' $false 'node no encontrado'
     Write-Host '        node no encontrado' -ForegroundColor Red
@@ -70,7 +70,7 @@ if (-not $node) {
 
 # ---------------------------------------------------------------- 2. HTML
 Write-Host ''
-Write-Host '  [2/8] Estructura de las paginas HTML' -ForegroundColor Cyan
+Write-Host '  [2/9] Estructura de las paginas HTML' -ForegroundColor Cyan
 if (-not $python) {
     Anotar 'Estructura HTML' $false 'Python no encontrado (es opcional)'
     Write-Host '        Python no encontrado; se omite' -ForegroundColor Yellow
@@ -86,7 +86,7 @@ if (-not $python) {
 
 # ---------------------------------------------------------------- 3. Cableado
 Write-Host ''
-Write-Host '  [3/8] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
+Write-Host '  [3/9] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_wiring.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -103,7 +103,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 4. SQL
 Write-Host ''
-Write-Host '  [4/8] Consistencia del esquema SQL' -ForegroundColor Cyan
+Write-Host '  [4/9] Consistencia del esquema SQL' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_sql.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -119,7 +119,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 5. Wistia
 Write-Host ''
-Write-Host '  [5/8] Deteccion de embeds de Wistia' -ForegroundColor Cyan
+Write-Host '  [5/9] Deteccion de embeds de Wistia' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node '_tools\test-wistia.js' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -132,7 +132,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 6. Worker
 Write-Host ''
-Write-Host '  [6/8] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
+Write-Host '  [6/9] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node 'cloudflare\test-routing.mjs' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -145,7 +145,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 7. Anidamientos
 Write-Host ''
-Write-Host '  [7/8] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
+Write-Host '  [7/9] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_embeds.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -162,7 +162,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 8. Certificado
 Write-Host ''
-Write-Host '  [8/8] Generacion del certificado PDF (con jsPDF de verdad)' -ForegroundColor Cyan
+Write-Host '  [8/9] Generacion del certificado PDF (con jsPDF de verdad)' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Certificado PDF' $false 'node no encontrado'
 } elseif (-not (Test-Path '_tools\vendor\node_modules\jspdf')) {
@@ -179,6 +179,21 @@ if (-not $node) {
     if ($ok) { Write-Host "        $cuantas comprobaciones del PDF, todas correctas" -ForegroundColor Green }
     else { $salida | Select-String '^  FALLO|->' | ForEach-Object { Write-Host "        $_" -ForegroundColor Red } }
     Anotar 'Certificado PDF' $ok "$cuantas comprobaciones, $malas fallos"
+}
+
+# ---------------------------------------------------------------- 9. Panel
+Write-Host ''
+Write-Host '  [9/9] Funciones puras del panel (slug y JSON de la IA)' -ForegroundColor Cyan
+if ($node) {
+    $salida = & $node '_tools\test-admin.js' 2>&1
+    $ok = ($LASTEXITCODE -eq 0)
+    $cuantas = @($salida | Select-String '^  OK ').Count
+    $malas = @($salida | Select-String '^  FALLO').Count
+    if ($ok) { Write-Host "        $cuantas comprobaciones, todas correctas" -ForegroundColor Green }
+    else { $salida | Select-String '^  FALLO|esperado:|obtenido:' | ForEach-Object { Write-Host "        $_" -ForegroundColor Red } }
+    Anotar 'Panel (funciones puras)' $ok "$cuantas comprobaciones, $malas fallos"
+} else {
+    Anotar 'Panel (funciones puras)' $false 'node no encontrado'
 }
 
 # ---------------------------------------------------------------- resumen
