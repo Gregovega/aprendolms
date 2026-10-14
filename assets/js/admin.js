@@ -1535,6 +1535,7 @@
   function quitarOpcion(capa, qi, oi) {
     var q = estado.preguntas[qi];
     if (!q) return;
+    if (!(oi >= 0 && oi < q.opciones.length)) return;
     if (q.opciones.length <= 2) {
       A.aviso('Una pregunta necesita al menos 2 opciones.', 'warn');
       return;
@@ -2043,6 +2044,10 @@
 
     res.validas = res.preguntas.length;
     res.ok = res.errores.length === 0 && res.validas > 0;
+
+    // Todo o nada, garantizado aquí mismo: si algo falló no se devuelve ninguna
+    // pregunta, así ningún llamador puede cargar media lista por descuido.
+    if (!res.ok) res.preguntas = [];
     return res;
   }
 
