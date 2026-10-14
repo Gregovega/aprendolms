@@ -53,7 +53,7 @@ Write-Host ('  ' + ('-' * 34)) -ForegroundColor DarkGray
 
 # ---------------------------------------------------------------- 1. JavaScript
 Write-Host ''
-Write-Host '  [1/6] Sintaxis JavaScript' -ForegroundColor Cyan
+Write-Host '  [1/7] Sintaxis JavaScript' -ForegroundColor Cyan
 if (-not $node) {
     Anotar 'Sintaxis JS' $false 'node no encontrado'
     Write-Host '        node no encontrado' -ForegroundColor Red
@@ -70,7 +70,7 @@ if (-not $node) {
 
 # ---------------------------------------------------------------- 2. HTML
 Write-Host ''
-Write-Host '  [2/6] Estructura de las paginas HTML' -ForegroundColor Cyan
+Write-Host '  [2/7] Estructura de las paginas HTML' -ForegroundColor Cyan
 if (-not $python) {
     Anotar 'Estructura HTML' $false 'Python no encontrado (es opcional)'
     Write-Host '        Python no encontrado; se omite' -ForegroundColor Yellow
@@ -86,7 +86,7 @@ if (-not $python) {
 
 # ---------------------------------------------------------------- 3. Cableado
 Write-Host ''
-Write-Host '  [3/6] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
+Write-Host '  [3/7] Cableado HTML <-> JavaScript' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_wiring.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -103,7 +103,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 4. SQL
 Write-Host ''
-Write-Host '  [4/6] Consistencia del esquema SQL' -ForegroundColor Cyan
+Write-Host '  [4/7] Consistencia del esquema SQL' -ForegroundColor Cyan
 if ($python) {
     $salida = & $python '_tools\check_sql.py' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -119,7 +119,7 @@ if ($python) {
 
 # ---------------------------------------------------------------- 5. Wistia
 Write-Host ''
-Write-Host '  [5/6] Deteccion de embeds de Wistia' -ForegroundColor Cyan
+Write-Host '  [5/7] Deteccion de embeds de Wistia' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node '_tools\test-wistia.js' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -132,7 +132,7 @@ if ($node) {
 
 # ---------------------------------------------------------------- 6. Worker
 Write-Host ''
-Write-Host '  [6/6] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
+Write-Host '  [6/7] Enrutado de subdominios (Worker de Cloudflare)' -ForegroundColor Cyan
 if ($node) {
     $salida = & $node 'cloudflare\test-routing.mjs' 2>&1
     $ok = ($LASTEXITCODE -eq 0)
@@ -141,6 +141,23 @@ if ($node) {
     Anotar 'Enrutado Worker' $ok $(if ($linea) { $linea.Line.Trim() } else { '' })
 } else {
     Anotar 'Enrutado Worker' $false 'node no encontrado'
+}
+
+# ---------------------------------------------------------------- 7. Anidamientos
+Write-Host ''
+Write-Host '  [7/7] Consultas anidadas contra claves foraneas' -ForegroundColor Cyan
+if ($python) {
+    $salida = & $python '_tools\check_embeds.py' 2>&1
+    $ok = ($LASTEXITCODE -eq 0)
+    $cuantos = 0
+    $salida | Select-String 'Consultas anidadas encontradas: (\d+)' | ForEach-Object {
+        $cuantos = [int]$_.Matches[0].Groups[1].Value
+    }
+    if ($ok) { Write-Host "        $cuantos anidamientos, todos con su clave foranea" -ForegroundColor Green }
+    else { $salida | Select-String '\[X\]|Falta una clave' | ForEach-Object { Write-Host "        $_" -ForegroundColor Red } }
+    Anotar 'Anidamientos/FK' $ok "$cuantos anidamientos"
+} else {
+    Anotar 'Anidamientos/FK' $false 'Python no encontrado'
 }
 
 # ---------------------------------------------------------------- resumen

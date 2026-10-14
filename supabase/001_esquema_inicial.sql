@@ -95,6 +95,35 @@ create table if not exists public.inscripciones (
 );
 comment on table public.inscripciones is 'Quién tiene derecho a ver qué curso. Control de acceso del requisito 2.1.';
 
+-- ---------------------------------------------------------------------------
+-- CLAVE FORÁNEA NECESARIA PARA QUE EL PANEL PUEDA LISTAR A LOS INSCRITOS
+--
+-- El panel hace:  select('..., perfiles(nombre_completo, email)')  sobre
+-- inscripciones. PostgREST resuelve esos anidamientos buscando una clave
+-- foránea DIRECTA entre las dos tablas.
+--
+-- Sin esta línea no hay ninguna: inscripciones.user_id y perfiles.id apuntan
+-- cada una por su lado a auth.users, así que PostgREST no encuentra la
+-- relación y responde "Could not find a relationship between 'inscripciones'
+-- and 'perfiles' in the schema cache". La tabla de inscritos del panel
+-- quedaría vacía con un error.
+--
+-- Es una segunda clave foránea sobre la misma columna, lo cual es válido:
+-- una garantiza la integridad contra auth.users y esta contra el perfil.
+-- ---------------------------------------------------------------------------
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'inscripciones_user_id_perfiles_fkey'
+      and conrelid = 'public.inscripciones'::regclass
+  ) then
+    alter table public.inscripciones
+      add constraint inscripciones_user_id_perfiles_fkey
+      foreign key (user_id) references public.perfiles(id) on delete cascade;
+  end if;
+end $$;
+
 -- Progreso por lección.
 create table if not exists public.progress (
   id              uuid primary key default gen_random_uuid(),

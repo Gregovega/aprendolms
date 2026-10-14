@@ -55,7 +55,7 @@ se genera en el navegador con jsPDF.
 - **Soporte de las DOS generaciones de Wistia** (ver más abajo: era un problema real).
 - **Worker de Cloudflare** para los subdominios por curso, con su lógica de enrutado
   probada (22 casos).
-- **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 6 comprobaciones del
+- **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 7 comprobaciones del
   proyecto de una vez.
 
 ### ⏳ Pendiente
@@ -397,9 +397,28 @@ Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier host
   **ninguno tiene secretos** (los secretos viven solo en `.env`, que Git ignora).
   Si prefieres que no sea accesible, borra `.nojekyll` y añade un `_config.yml` con
   `exclude: [_tools]`.
-- **Herramientas de comprobación** (opcionales):
+- **Herramientas de comprobación.** El atajo es un solo comando:
+
   ```powershell
-  node _tools\test-wistia.js                                    # 11 casos del detector de embeds
-  python _tools\check_html.py                                   # estructura HTML y recursos locales
-  Get-ChildItem assets\js -Filter *.js | % { node --check $_.FullName }   # sintaxis JS
+  .\_tools\check-all.cmd
   ```
+
+  Y por separado, si quieres el detalle de una:
+
+  ```powershell
+  node _tools\test-wistia.js             # 11 casos del detector de embeds de Wistia
+  node cloudflare\test-routing.mjs       # 22 casos del enrutado de subdominios
+  python _tools\check_html.py            # estructura HTML y recursos locales
+  python _tools\check_wiring.py          # que cada getElementById encuentre su elemento
+  python _tools\check_sql.py             # consistencia interna del esquema SQL
+  python _tools\check_embeds.py          # que cada consulta anidada tenga su clave foránea
+  ```
+
+  `check_embeds.py` merece una explicación: nació de un **fallo real** que se había colado.
+  El panel hacía `select('..., perfiles(nombre_completo)')` sobre `inscripciones`, pero no
+  existía ninguna clave foránea entre esas dos tablas (ambas apuntaban por separado a
+  `auth.users`). PostgREST resuelve los anidamientos por clave foránea, así que la lista de
+  inscritos habría fallado con *"Could not find a relationship…"* — y eso no se ve hasta
+  abrir esa pantalla. El comprobador cruza las consultas del cliente con las claves del
+  esquema y lo detecta en segundos. Está validado: se probó quitando la clave foránea y
+  efectivamente da error.

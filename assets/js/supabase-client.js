@@ -322,11 +322,33 @@
       return r.data;
     },
     async listarInscritos(cursoId) {
+      // Vía normal: PostgREST resuelve el anidamiento por la clave foránea
+      // inscripciones.user_id -> perfiles.id (la crea el esquema).
       var r = await client.from('inscripciones')
         .select('id, estado, creado_en, user_id, perfiles(nombre_completo, email)')
         .eq('curso_id', cursoId).order('creado_en', { ascending: false });
-      if (r.error) throw r.error;
-      return r.data || [];
+      if (!r.error) return r.data || [];
+
+      // Si esa clave foránea no existe, PostgREST responde que no encuentra la
+      // relación. En vez de dejar la tabla de inscritos vacía, se une a mano.
+      var esFaltaDeRelacion = /relationship|schema cache/i.test(String(r.error.message || ''));
+      if (!esFaltaDeRelacion) throw r.error;
+
+      var base = await client.from('inscripciones')
+        .select('id, estado, creado_en, user_id')
+        .eq('curso_id', cursoId).order('creado_en', { ascending: false });
+      if (base.error) throw base.error;
+
+      var filas = base.data || [];
+      var ids = filas.map(function (f) { return f.user_id; });
+      var porId = {};
+      if (ids.length) {
+        var p = await client.from('perfiles').select('id, nombre_completo, email').in('id', ids);
+        (p.data || []).forEach(function (x) { porId[x.id] = x; });
+      }
+      return filas.map(function (f) {
+        return Object.assign({}, f, { perfiles: porId[f.user_id] || null });
+      });
     },
     async actualizarAjustes(cambios) {
       var r = await client.from('ajustes').update(cambios).eq('id', 1).select().single();
