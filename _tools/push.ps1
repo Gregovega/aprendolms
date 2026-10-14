@@ -48,6 +48,21 @@ $user   = if ($conf['GITHUB_USER'])   { [string]$conf['GITHUB_USER'] }   else { 
 if ([string]::IsNullOrWhiteSpace($token)) { Write-Bad 'Falta GITHUB_TOKEN en .env.'; exit 1 }
 if ($repo -notmatch '^[\w.-]+/[\w.-]+$')  { Write-Bad "GITHUB_REPO invalido: '$repo'. Se espera usuario/repositorio."; exit 1 }
 
+# Detectar el texto de ejemplo o un token cortado ANTES de gastar una peticion a GitHub,
+# para dar un mensaje util en lugar de un 401 que no explica nada.
+if ($token -match '\.\.\.$' -or $token -in @('TU_TOKEN','TOKEN','PEGA-AQUI-EL-TOKEN')) {
+    Write-Bad "El GITHUB_TOKEN guardado es el TEXTO DE EJEMPLO ('$token'), no tu token real."
+    Write-Info 'Arreglalo asi, en una terminal nueva:'
+    Write-Info '  .\_tools\set-credentials.cmd -GithubToken "github_pat_EL_TOKEN_COMPLETO"'
+    Write-Info '  .\_tools\push.cmd'
+    exit 1
+}
+if ((($token -match '^github_pat_') -or ($token -match '^ghp_')) -and $token.Length -lt 40) {
+    Write-Bad "El GITHUB_TOKEN guardado parece INCOMPLETO: tiene $($token.Length) caracteres y uno real ronda los 90."
+    Write-Info 'Vuelve a copiarlo entero desde GitHub y guardalo otra vez con set-credentials.cmd.'
+    exit 1
+}
+
 Write-Host ''
 Write-Host '  APRENDO LMS — publicar en GitHub' -ForegroundColor White
 Write-Info "Repositorio : $repo"

@@ -402,6 +402,16 @@
     if (el) el.textContent = valor;
   }
 
+  /**
+   * Lanza una promesa desde un manejador de eventos sin dejarla nunca sin
+   * capturar: cualquier fallo acaba en un aviso, no en la consola del alumno.
+   */
+  function lanzar(promesa) {
+    if (promesa && typeof promesa.catch === 'function') {
+      promesa.catch(function (e) { A.aviso(A.traducirError(e), 'error'); });
+    }
+  }
+
   function cambiarTab(t) {
     estado.tab = t === 'ajustes' ? 'ajustes' : 'cursos';
     var esCursos = estado.tab === 'cursos';
@@ -491,10 +501,10 @@
     if (!curso) return;
 
     if (accion === 'editar') abrirCurso(curso.id);
-    else if (accion === 'lecciones') abrirLecciones(curso);
+    else if (accion === 'lecciones') lanzar(abrirLecciones(curso));
     else if (accion === 'inscribir') abrirInscritos(curso);
-    else if (accion === 'publicar') alternarPublicado(curso);
-    else if (accion === 'borrar') borrarCurso(curso);
+    else if (accion === 'publicar') lanzar(alternarPublicado(curso));
+    else if (accion === 'borrar') lanzar(borrarCurso(curso));
   }
 
   async function alternarPublicado(curso) {
@@ -969,8 +979,8 @@
 
       switch (accion) {
         case 'nueva-leccion': anadirLeccion(capa); break;
-        case 'guardar-leccion': guardarLeccion(capa, idx); break;
-        case 'borrar-leccion': borrarLeccion(capa, idx); break;
+        case 'guardar-leccion': lanzar(guardarLeccion(capa, idx)); break;
+        case 'borrar-leccion': lanzar(borrarLeccion(capa, idx)); break;
         case 'validar-wistia': validarWistia(capa, idx, true); break;
         case 'preguntas-de-leccion': irAPreguntasDeLeccion(capa, idx); break;
         case 'abrir-ia': abrirGeneradorIA(capa); break;
@@ -980,8 +990,8 @@
         case 'bajar-pregunta': moverPregunta(capa, qi, 1); break;
         case 'anadir-opcion': anadirOpcion(capa, qi); break;
         case 'quitar-opcion': quitarOpcion(capa, qi, parseInt(b.getAttribute('data-oidx'), 10)); break;
-        case 'guardar-preguntas': guardarPreguntas(capa, curso); break;
-        case 'borrar-preguntas': borrarTodasPreguntas(capa, curso); break;
+        case 'guardar-preguntas': lanzar(guardarPreguntas(capa, curso)); break;
+        case 'borrar-preguntas': lanzar(borrarTodasPreguntas(capa, curso)); break;
         default: break;
       }
     });

@@ -373,14 +373,40 @@ if ($GithubRepo) {
 }
 if ($GithubToken) {
     $GithubToken = $GithubToken.Trim()
-    $kind = switch -Regex ($GithubToken) {
-        '^ghp_'  { 'classic PAT' }
-        '^github_pat_' { 'fine-grained PAT' }
-        '^gho_'  { 'OAuth' }
-        default  { 'desconocido' }
+    $largo = $GithubToken.Length
+
+    # Detectar el TEXTO DE EJEMPLO. Es un error facilismo de cometer: se copia la
+    # instruccion "github_pat_..." en vez del token real, y como el prefijo coincide
+    # una validacion ingenua lo daria por bueno.
+    $esEjemplo = ($GithubToken -match '\.\.\.$') -or
+                 ($GithubToken -match '^(github_pat_|ghp_|gho_)\.\.\.$') -or
+                 ($GithubToken -in @('TU_TOKEN','TOKEN','AQUI-TU-TOKEN','PEGA-AQUI-EL-TOKEN'))
+
+    if ($esEjemplo) {
+        Write-Bad "GITHUB_TOKEN es el TEXTO DE EJEMPLO, no tu token ('$GithubToken'). Copia el valor completo que te dio GitHub: empieza por github_pat_ y ronda los 90 caracteres."
     }
-    if ($kind -eq 'desconocido') { Write-Warn 'GITHUB_TOKEN no empieza por ghp_ ni github_pat_. Se guarda igual.' }
-    else { Write-Ok "GITHUB_TOKEN con formato correcto ($kind)" }
+    elseif ($GithubToken -match '^github_pat_') {
+        # Un fine-grained PAT real mide ~93 caracteres (github_pat_ + 22 + _ + ~59).
+        if ($largo -lt 40) {
+            Write-Bad "GITHUB_TOKEN parece INCOMPLETO: solo tiene $largo caracteres y uno real ronda los 90. Revisa que lo copiaste entero, sin cortar."
+        } else {
+            Write-Ok "GITHUB_TOKEN con formato correcto (fine-grained, $largo caracteres)"
+        }
+    }
+    elseif ($GithubToken -match '^ghp_') {
+        # Un PAT clasico mide 40 caracteres (ghp_ + 36).
+        if ($largo -lt 40) {
+            Write-Bad "GITHUB_TOKEN parece INCOMPLETO: solo tiene $largo caracteres y uno clasico mide 40."
+        } else {
+            Write-Ok "GITHUB_TOKEN con formato correcto (PAT clasico, $largo caracteres)"
+        }
+    }
+    elseif ($GithubToken -match '^gho_') {
+        Write-Warn 'GITHUB_TOKEN parece un token OAuth (gho_). Para publicar se recomienda un PAT.'
+    }
+    else {
+        Write-Warn "GITHUB_TOKEN no empieza por github_pat_ ni ghp_ (tiene $largo caracteres). Se guarda igual, pero revisalo."
+    }
     $final['GITHUB_TOKEN'] = $GithubToken
 }
 if ($GithubUser)   { $final['GITHUB_USER'] = $GithubUser.Trim() }
