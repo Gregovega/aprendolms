@@ -34,13 +34,19 @@ se genera en el navegador con jsPDF.
   - 10 tablas, RLS en todas, 3 funciones y protección de las respuestas del examen.
 - **Script de credenciales** con validación, salvaguarda de `service_role` y
   diagnóstico de red: `_tools/set-credentials.ps1`
+- **Git 2.56.0 instalado** en `C:\Users\Gregorio\git-portable` (portátil, sin
+  administrador, sin tocar `Program Files` ni el registro) y añadido a tu PATH de usuario.
+- **Repositorio local listo**: `Gregovega/aprendolms`, rama `main`, con el historial
+  previo del remoto preservado mediante un merge (no se borró ningún commit).
+- **Script de publicación**: `_tools/push.ps1` — valida el token, impide publicar `.env`
+  y nunca hace force-push.
 
 ### ⏳ Pendiente
 
 1. **Aplicar el esquema SQL** en el SQL Editor del proyecto nuevo.
-2. **Instalar Git** (no está instalado y winget está roto).
-3. **Crear el repositorio** en la cuenta de GitHub nueva.
-4. **Cuenta de Wistia** y primer video.
+2. **Token de GitHub** (fine-grained, solo `Gregovega/aprendolms`) y primer push.
+3. **Cuenta de Wistia** y primer video.
+4. **Activar GitHub Pages** cuando exista `index.html`.
 5. **Construir el frontend**: diseño premium, panel de admin, página del curso,
    desbloqueo secuencial, examen y certificado.
 
@@ -114,6 +120,17 @@ cd "G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
 # 3. Añadir Wistia y GitHub cuando los tengas
 .\_tools\set-credentials.cmd -WistiaApiToken "..." -GithubRepo "usuario/aprendo-lms"
 ```
+
+### Publicar en GitHub
+
+```powershell
+# Abre una terminal NUEVA para que tome el git del PATH
+.\_tools\set-credentials.cmd -GithubToken "github_pat_..."
+.\_tools\push.cmd
+```
+
+El token queda guardado **solo en `.env`**. No se escribe en `.git/config` ni en la URL
+del remoto: viaja en una cabecera temporal durante el push.
 
 ---
 

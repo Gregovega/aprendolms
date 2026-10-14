@@ -208,9 +208,13 @@ APRENDO LMS\
 ├─ .env.example            ← plantilla con instrucciones de cada campo
 ├─ .gitignore              ← protege .env
 ├─ assets\js\config.js     ← 🌐 PÚBLICO: URL + anon key. Se sube, es correcto.
+├─ supabase\
+│  └─ 001_esquema_inicial.sql  ← el esquema de la base de datos
 └─ _tools\
    ├─ set-credentials.ps1  ← el motor de activación
    ├─ set-credentials.cmd  ← el lanzador (evita el bloqueo de política)
+   ├─ push.ps1             ← publica en GitHub de forma segura
+   ├─ push.cmd             ← su lanzador
    └─ dump_docx.py         ← utilidad para leer documentos Word
 ```
 
@@ -226,34 +230,72 @@ mientras esté en `.env` y `.env` nunca salga de tu equipo.
 
 ---
 
-## 7. Lo que falta en tu equipo (hay que resolverlo)
+## 7. Estado del equipo (ya resuelto)
 
-### Git no está instalado
-Lo necesitas para el repositorio y para GitHub Pages. Y `winget` está roto, así que no
-sirve el camino fácil.
+### ✅ Git instalado
+`git version 2.56.0.windows.2`, en `C:\Users\Gregorio\git-portable`.
 
-**Opción A (recomendada):** descargar el instalador oficial
-<https://git-scm.com/download/win> → ejecutar → siguiente, siguiente, finalizar.
-Luego cierra y reabre PowerShell.
+Se instaló de forma **portátil**, es decir:
+- **no** pide administrador,
+- **no** toca `Program Files`,
+- **no** escribe en el registro (salvo la entrada del PATH),
+- se desinstala borrando esa única carpeta.
 
-**Opción B:** sin Git, subes los archivos arrastrándolos a la web de GitHub y publicas
-GitHub Pages desde ahí. Funciona, pero pierdes el control de versiones.
+Quedó añadido a tu **PATH de usuario**, así que en cualquier terminal nueva el comando
+`git` ya funciona. Abre una ventana nueva para que lo tome.
 
-Si quieres, puedo descargarlo e instalarlo yo por PowerShell con tu aprobación.
+### Token de GitHub (fine-grained)
+
+El token es la "llave" que autoriza subir archivos. Se crea así:
+
+1. Entra en <https://github.com/settings/personal-access-tokens/new>
+2. **Token name:** `aprendo-lms-cli`
+3. **Expiration:** 90 días
+4. **Repository access:** *Only select repositories* → elige **`Gregovega/aprendolms`**
+   ⚠️ Esto es clave: el token solo sirve para ESE repositorio. No puede tocar otros.
+5. **Repository permissions:**
+   - **Contents:** `Read and write` ← imprescindible
+   - (`Metadata: Read-only` se marca sola, es obligatoria)
+6. **Generate token** y copia el valor. Empieza por `github_pat_`.
+   GitHub solo lo muestra una vez.
+
+### Publicar
+
+Abre una **terminal nueva** y ejecuta:
+
+```powershell
+cd "G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
+.\_tools\set-credentials.cmd -GithubToken "github_pat_..."
+.\_tools\push.cmd
+```
+
+`push.ps1` hace cuatro comprobaciones antes de subir nada:
+1. Valida el token contra la API de GitHub.
+2. Confirma que el token **ve** el repositorio y tiene permiso de escritura.
+3. **Aborta si `.env` está rastreado** — tus secretos jamás se publican.
+4. Comprueba que el remoto no tenga cambios que tú no tengas, y **nunca hace
+   force-push**: si hay conflicto, se detiene y te dice qué hacer.
+
+El token se guarda **solo en `.env`** y viaja en una cabecera temporal durante el push.
+No queda escrito en `.git/config` ni en la URL del remoto.
 
 ---
 
 ## Siguiente paso
 
-Cuando tengas el `Project URL` y la `anon key`, pásamelos (esa clave es pública, no hay
-riesgo) **o** ejecuta tú el Paso 1 y avísame. En cuanto la conexión esté verificada, el plan es:
+**Credenciales de Supabase: ya verificadas.** La prueba real `GET /auth/v1/health` con tu
+clave devolvió **HTTP 200**, así que la URL y la anon key están confirmadas contra el
+proyecto `wkqmgkevttvmbqrpxguk`. No hay nada más que comprobar ahí.
 
-1. **Esquema SQL** — `cursos`, `lecciones`, `preguntas_test`, `progress` + políticas RLS
-   (cada alumno solo ve y escribe su propio progreso), tal como pide el requisito técnico.
-2. **Sistema de diseño** — fondo `#0A0E17`, acento `#FF6B00`, tarjetas `#1F2937` radius 12px,
+Lo que queda, en orden:
+
+1. **Aplicar el esquema SQL** — pega `supabase/001_esquema_inicial.sql` en el
+   *SQL Editor* del proyecto nuevo. Crea 10 tablas con RLS y protege las respuestas del examen.
+2. **Crear el token de GitHub** (sección 7) y lanzar `_tools\push.cmd`.
+3. **Sistema de diseño** — fondo `#0A0E17`, acento `#FF6B00`, tarjetas `#1F2937` radius 12px,
    tipografías Inter / Outfit.
-3. **Panel de administración** — botón naranja prominente, drawer lateral, "Añadir Lección",
+4. **Panel de administración** — botón naranja prominente, drawer lateral, "Añadir Lección",
    editor de preguntas con botón "Generar Preguntas con IA".
-4. **Página del curso** — control de acceso, desbloqueo secuencial por `percentwatchedchanged ≥ 90%`,
+5. **Página del curso** — control de acceso, desbloqueo secuencial por `percentwatchedchanged ≥ 90%`,
    escritura de progreso en Supabase.
-5. **Examen y certificado** — ≥80% aprueba, jsPDF genera el PDF con nombre, curso, academia, fecha y firma.
+6. **Examen y certificado** — ≥80% aprueba, jsPDF genera el PDF con nombre, curso, academia, fecha y firma.
