@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- El panel no debe indexarse nunca: es de un solo administrador. -->
+  <meta name="robots" content="noindex">
+  <title>Administración · Aprendo LMS</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/design-system.css">
+</head>
+<body>
+
+<!-- Cabecera y pie los dibuja UI (assets/js/ui.js) -->
+<div id="header-mount"></div>
+
+<main class="container container-wide mt-6">
+
+  <!-- ------------------------------------------------------------ cabecera -->
+  <div class="row-between mb-4">
+    <div>
+      <h1>Administración</h1>
+      <p class="text-muted">Crea cursos, sus lecciones y el examen. Esta página solo es accesible para el administrador.</p>
+    </div>
+    <!-- El requisito pide un botón prominente en color de acento -->
+    <button class="btn btn-primary btn-lg" type="button" id="btn-nuevo-curso">
+      + Crear Nuevo Curso
+    </button>
+  </div>
+
+  <!-- ------------------------------------------------------------ estadísticas -->
+  <div class="grid grid-3" id="zona-stats" aria-label="Resumen">
+    <div class="stat">
+      <div class="stat-value" id="stat-cursos">—</div>
+      <div class="stat-label">Cursos</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-lecciones">—</div>
+      <div class="stat-label">Lecciones</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-alumnos">—</div>
+      <div class="stat-label">Alumnos inscritos</div>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------------------ pestañas -->
+  <div class="row mt-6 mb-4" role="tablist" aria-label="Secciones del panel">
+    <button class="btn btn-primary" type="button" id="tab-cursos"
+            role="tab" aria-selected="true" aria-controls="panel-cursos">Cursos</button>
+    <button class="btn btn-ghost" type="button" id="tab-ajustes"
+            role="tab" aria-selected="false" aria-controls="panel-ajustes">Ajustes</button>
+  </div>
+
+  <!-- ------------------------------------------------------------ panel: cursos -->
+  <section id="panel-cursos" role="tabpanel" aria-labelledby="tab-cursos" tabindex="0">
+    <!-- Lo rellena admin.js con una tarjeta por curso -->
+    <div id="lista-cursos" class="grid grid-2"></div>
+  </section>
+
+  <!-- ------------------------------------------------------------ panel: ajustes -->
+  <section id="panel-ajustes" role="tabpanel" aria-labelledby="tab-ajustes" tabindex="0" class="hidden">
+    <div class="card card-pad-lg" style="max-width:760px">
+      <h2 class="card-title">Ajustes de la academia</h2>
+      <p class="text-muted text-sm mb-4">
+        El nombre aparece en el certificado. La firma y el logo se imprimen sobre él.
+      </p>
+
+      <form id="form-ajustes" novalidate>
+        <label class="field">
+          <span class="label">Nombre de la academia <span class="req">*</span></span>
+          <input class="input" type="text" id="aj-nombre" name="nombre_academia" required
+                 placeholder="Ej. Academia Aprendo" autocomplete="organization">
+          <span class="hint">Es el nombre obligatorio que sale en el certificado.</span>
+        </label>
+
+        <label class="field">
+          <span class="label">URL de la firma (imagen)</span>
+          <input class="input" type="url" id="aj-firma" name="firma_url"
+                 placeholder="https://…/firma.png" inputmode="url">
+          <span class="hint">Opcional. Un PNG con fondo transparente queda mejor sobre el certificado.</span>
+        </label>
+        <!-- Vista previa de la firma: se muestra solo si la imagen carga -->
+        <img id="prev-firma" class="hidden mb-4" alt="Vista previa de la firma"
+             style="max-height:90px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px">
+
+        <label class="field">
+          <span class="label">URL del logo (imagen)</span>
+          <input class="input" type="url" id="aj-logo" name="logo_url"
+                 placeholder="https://…/logo.png" inputmode="url">
+          <span class="hint">Opcional. Se usa como marca de la academia.</span>
+        </label>
+        <img id="prev-logo" class="hidden mb-4" alt="Vista previa del logo"
+             style="max-height:90px;max-width:100%;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px">
+
+        <div class="row mt-4">
+          <button class="btn btn-primary" type="submit" id="btn-guardar-ajustes">Guardar ajustes</button>
+          <span class="text-faint text-xs">Los cambios se aplican al instante en todo el sitio.</span>
+        </div>
+      </form>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer-mount"></div>
+
+<!-- El orden de carga importa: no lo cambies. -->
+<script src="assets/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/wistia-player.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>

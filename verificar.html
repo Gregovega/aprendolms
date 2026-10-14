@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verificar certificado · Aprendo LMS</title>
+<meta name="description" content="Comprueba la autenticidad de un certificado emitido por la academia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/design-system.css">
+</head>
+<body>
+
+<div id="header-mount"></div>
+
+<main class="container container-narrow" style="padding-top:48px;padding-bottom:64px">
+  <span class="hero-eyebrow">&#128269; Verificación</span>
+  <h1 style="font-size:clamp(1.6rem,3.4vw,2.3rem)">Verificar un certificado</h1>
+  <p class="hero-lead">
+    Escribe el código que aparece al pie del certificado. Así cualquiera puede comprobar
+    que fue emitido por esta academia y que es auténtico.
+  </p>
+
+  <form class="card mt-6" id="form-verificar" novalidate>
+    <label class="field">
+      <span class="label">Código de verificación</span>
+      <input class="input" id="codigo" type="text" placeholder="Ej. A1B2C3D4E5"
+             autocomplete="off" spellcheck="false" maxlength="40" required
+             style="font-family:ui-monospace,monospace;letter-spacing:.14em;text-transform:uppercase;font-size:1.05rem">
+      <span class="hint">No distingue mayúsculas de minúsculas.</span>
+    </label>
+    <button class="btn btn-primary btn-lg btn-block" type="submit" id="btn-verificar">Verificar certificado</button>
+  </form>
+
+  <div id="resultado" class="mt-6"></div>
+</main>
+
+<div id="footer-mount"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/verificar.js"></script>
+</body>
+</html>

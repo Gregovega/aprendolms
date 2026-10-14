@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aprendo LMS · Cursos en línea</title>
+<meta name="description" content="Plataforma de cursos en línea con desbloqueo secuencial de lecciones, examen final y certificado automático.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/design-system.css">
+</head>
+<body>
+
+<div id="header-mount"></div>
+
+<main>
+  <section class="hero">
+    <div class="container container-wide">
+      <span class="hero-eyebrow">&#127891; Formación en línea</span>
+      <h1 id="hero-titulo">Aprende a tu ritmo,<br>certifícate de verdad.</h1>
+      <p class="hero-lead" id="hero-lead">
+        Cursos en video con avance secuencial: completas cada lección y se abre la siguiente.
+        Al terminar, rindes el examen y descargas tu certificado.
+      </p>
+      <div class="row mt-6" id="hero-acciones">
+        <a class="btn btn-primary btn-lg" href="#catalogo">Ver los cursos</a>
+        <button class="btn btn-ghost btn-lg hidden" id="hero-acceder">Acceder a mis cursos</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="container container-wide" id="seccion-mis" hidden>
+    <div class="row-between mb-4">
+      <h2 class="mb-0">Mis cursos</h2>
+      <span class="badge" id="mis-contador">0</span>
+    </div>
+    <div class="grid grid-3" id="mis-cursos"></div>
+    <hr class="divider">
+  </section>
+
+  <section class="container container-wide" id="catalogo">
+    <div class="row-between mb-4">
+      <h2 class="mb-0">Cursos disponibles</h2>
+      <span class="badge" id="cat-contador">—</span>
+    </div>
+    <div id="zona-catalogo">
+      <div class="grid grid-3">
+        <div class="skeleton" style="height:230px"></div>
+        <div class="skeleton" style="height:230px"></div>
+        <div class="skeleton" style="height:230px"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="footer-mount"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/catalogo.js"></script>
+</body>
+</html>

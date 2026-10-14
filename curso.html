@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Curso · Aprendo LMS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/design-system.css">
+<style>
+  /* Rejilla propia de esta página: barra lateral de lecciones + contenido */
+  .curso-layout { display: grid; grid-template-columns: minmax(0, 310px) minmax(0, 1fr); gap: 26px; align-items: start; }
+  @media (max-width: 940px) { .curso-layout { grid-template-columns: 1fr; } }
+  .sidebar-sticky { position: sticky; top: calc(var(--header-h) + 18px); }
+  @media (max-width: 940px) { .sidebar-sticky { position: static; } }
+  .curso-hero { padding: 30px 0 22px; }
+  .curso-hero h1 { font-size: clamp(1.5rem, 3vw, 2.15rem); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<div id="header-mount"></div>
+
+<main class="container container-wide" id="app">
+  <div id="aviso-zona"></div>
+
+  <section class="curso-hero" id="hero-curso" hidden>
+    <div class="row-between">
+      <div style="min-width:0">
+        <div class="row" style="gap:10px;margin-bottom:6px">
+          <span class="badge badge-accent">Curso</span>
+          <span class="badge" id="badge-lecciones">—</span>
+        </div>
+        <h1 id="titulo-curso">Cargando…</h1>
+        <p class="text-muted mb-0" id="desc-curso" style="max-width:70ch"></p>
+      </div>
+      <div class="row" style="gap:16px">
+        <div class="ring" id="anillo-progreso" style="--p:0"><span id="anillo-texto">0%</span></div>
+        <div>
+          <div class="stat-label">Tu progreso</div>
+          <div id="progreso-detalle" class="text-sm text-muted">0 de 0 lecciones</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="cargando-zona" class="text-center" style="padding:72px 0">
+    <div class="spinner spinner-lg" style="margin:0 auto 14px"></div>
+    <div class="text-muted">Cargando el curso…</div>
+  </div>
+
+  <div class="curso-layout" id="layout" hidden>
+    <aside>
+      <div class="sidebar-sticky">
+        <div class="card card-pad-sm">
+          <div class="progress-label">
+            <span>Lecciones</span><strong id="sidebar-contador">0/0</strong>
+          </div>
+          <div class="progress mb-4"><div class="progress-bar" id="sidebar-barra" style="width:0%"></div></div>
+          <nav class="lesson-list" id="lista-lecciones" aria-label="Lecciones del curso"></nav>
+        </div>
+        <div class="card card-pad-sm mt-4" id="caja-examen" hidden>
+          <div class="card-title" style="font-size:.98rem">Examen final</div>
+          <p class="text-muted text-xs mb-2" id="examen-estado">Completa todas las lecciones para habilitarlo.</p>
+          <button class="btn btn-primary btn-block btn-sm" id="btn-ir-examen" disabled>Ir al examen</button>
+        </div>
+      </div>
+    </aside>
+
+    <div style="min-width:0">
+      <div id="zona-video"></div>
+      <div id="zona-examen" class="mt-6"></div>
+    </div>
+  </div>
+</main>
+
+<div id="footer-mount"></div>
+
+<script src="assets/js/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/wistia-player.js"></script>
+<script src="assets/js/certificado.js"></script>
+<script src="assets/js/quiz.js"></script>
+<script src="assets/js/curso.js"></script>
+</body>
+</html>

@@ -10,11 +10,20 @@ se genera en el navegador con jsPDF.
 
 | Capa | Tecnología | Estado |
 |---|---|---|
-| Frontend | HTML/CSS/JS estático en GitHub Pages | Pendiente |
-| Video | Wistia (Player API + embed async) | Cuenta por crear |
+| Frontend | HTML/CSS/JS estático en GitHub Pages | **Construido** |
+| Video | Wistia (Aurora + Vulcan/E-v1) | Cuenta por crear |
 | Backend | Supabase (auth + progreso + cursos) | **Credenciales verificadas** |
 | Dominio y CDN | Cloudflare | Pendiente |
-| Certificado | jsPDF en el navegador | Pendiente |
+| Certificado | jsPDF en el navegador | **Construido** |
+
+### Páginas
+
+| Página | Para qué |
+|---|---|
+| `index.html` | Portada: catálogo de cursos y "Mis cursos" |
+| `curso.html?slug=…` | Reproductor, desbloqueo secuencial, progreso, examen y certificado |
+| `admin.html` | Panel: crear cursos, lecciones, preguntas y ajustes |
+| `verificar.html` | Verificación pública de un certificado por su código |
 
 ---
 
@@ -40,15 +49,20 @@ se genera en el navegador con jsPDF.
   previo del remoto preservado mediante un merge (no se borró ningún commit).
 - **Script de publicación**: `_tools/push.ps1` — valida el token, impide publicar `.env`
   y nunca hace force-push.
+- **Frontend completo**: sistema de diseño, portada con catálogo y autenticación,
+  página del curso con desbloqueo secuencial y progreso, examen, certificado en PDF
+  y verificación pública.
+- **Soporte de las DOS generaciones de Wistia** (ver más abajo: era un problema real).
+- **Pruebas automáticas**: `_tools/test-wistia.js` (11 casos) y `_tools/check_html.py`.
 
 ### ⏳ Pendiente
 
 1. **Aplicar el esquema SQL** en el SQL Editor del proyecto nuevo.
 2. **Token de GitHub** (fine-grained, solo `Gregovega/aprendolms`) y primer push.
 3. **Cuenta de Wistia** y primer video.
-4. **Activar GitHub Pages** cuando exista `index.html`.
-5. **Construir el frontend**: diseño premium, panel de admin, página del curso,
-   desbloqueo secuencial, examen y certificado.
+4. **Activar GitHub Pages**.
+5. **Probar el flujo completo** con datos reales: crear un curso, inscribir un alumno,
+   ver un video, aprobar el examen y descargar el certificado.
 
 ---
 
@@ -106,6 +120,59 @@ lo que el prompt autoriza al decir "Supabase proporciona directamente la API RES
 
 ---
 
+## ⚠️ El problema de Wistia que casi rompe el desbloqueo secuencial
+
+El prompt maestro pide escuchar el evento **`percentwatchedchanged`**. Ese nombre
+pertenece al reproductor **antiguo** de Wistia (Vulcan / E-v1).
+
+Wistia tiene hoy **dos generaciones** de reproductor, y no comparten API:
+
+| | **Aurora** (el actual, lo que recibe una cuenta nueva) | **Vulcan / E-v1** (legacy) |
+|---|---|---|
+| Marcado | `<wistia-player media-id="…">` | `<div class="wistia_embed wistia_async_ID">` |
+| Script | `fast.wistia.com/player.js` | `fast.wistia.com/assets/external/E-v1.js` |
+| Evento de progreso | **`percent-watched-change`** | `percentwatchedchanged` |
+| Valor que entrega | decimal `0..1` | entero `0..100` |
+| Cómo se escucha | `elemento.addEventListener(...)` | `video.bind(...)` dentro de `_wq` |
+
+**Consecuencia:** una cuenta de Wistia recién creada entrega **Aurora**. Si el código
+solo escuchara `percentwatchedchanged`, el desbloqueo secuencial **no funcionaría nunca**
+y el fallo sería invisible (el video se vería, pero la lección 2 jamás se abriría).
+
+### Cómo lo resuelve este proyecto
+
+`assets/js/wistia-player.js` detecta el formato del embed que pegas en el panel, monta
+el reproductor correcto y expone **siempre la misma interfaz**:
+
+```js
+WistiaLMS.montar(contenedor, codigoEmbed, {
+  onProgreso: function (pct) { … },   // 0..100, monótono: nunca baja
+  onFin: function () { … }
+});
+```
+
+Además del evento oficial, se sondea `secondsWatched` —los **segundos únicos**, que
+excluyen lo saltado con la barra— y se usa el **mayor** de los dos. Así el alumno no
+puede desbloquear la lección siguiente arrastrando la barra hasta el final.
+
+La detección está cubierta por pruebas: `node _tools/test-wistia.js` (11 casos, incluidos
+el embed de Aurora, el de E-v1, el de iframe y el ID suelto).
+
+---
+
+## Cómo funciona el desbloqueo secuencial
+
+1. La lección 1 siempre está abierta.
+2. Al reproducir, `onProgreso` actualiza el medidor y guarda en `progress` (con 2,5 s de
+   retardo, para no escribir en cada segundo).
+3. Al alcanzar el **90 %**, la lección queda `completado = true` y se abre la siguiente.
+4. Al completar la última, se habilita el botón **Ir al examen**.
+5. El examen se corrige en el servidor. Con **≥ 80 %** se emite el certificado.
+6. Si reprueba: *"Ups, no aprobaste. Te recomendamos volver a ver la lección X para
+   reforzar."* con un botón grande **Repasar Lección**, y se puede reintentar de inmediato.
+
+---
+
 ## Puesta en marcha
 
 ```powershell
@@ -143,6 +210,65 @@ del remoto: viaja en una cabecera temporal durante el push.
 
 ---
 
+## Prueba de extremo a extremo (el orden importa)
+
+Sigue estos pasos en orden. Cada uno depende del anterior.
+
+### 1. Aplicar el esquema
+En el **SQL Editor** del proyecto Supabase, pega y ejecuta
+`supabase/001_esquema_inicial.sql`. Al final debe listar **10 tablas con
+`rls_activo = true`**.
+
+### 2. Crear tu usuario
+Abre `index.html` → **Crear cuenta** con tu correo.
+
+> Si Supabase te pide confirmar el correo, ve a **Authentication → Users** y
+> confírmalo a mano, o desactiva la confirmación en **Authentication → Providers → Email**.
+
+### 3. Hacerte administrador
+Esto es un paso obligatorio y se hace una sola vez:
+
+```sql
+-- Averigua tu UUID
+select id, email from auth.users order by created_at;
+
+-- Dalo de alta como administrador (sustituye el UUID)
+insert into public.admins (user_id) values ('PEGA-AQUI-TU-UUID');
+```
+
+Recarga la página: aparecerá **Administración** en la cabecera.
+
+### 4. Crear un curso
+**Administración → Crear Nuevo Curso**. Rellena título, descripción y slug
+(p. ej. `ventadechicha`). Añade al menos **2 lecciones** y pega el código embed de
+Wistia en cada una. El panel te dirá si el embed es válido y de qué generación es.
+
+Añade **preguntas** al examen (mínimo 1 para poder probar, idealmente 30).
+
+### 5. Inscribir a un alumno
+**Inscribir alumnos** → escribe el correo con el que te registraste (o un UUID).
+Sin inscripción activa, el alumno ve "Aún no tienes acceso".
+
+### 6. Probar el recorrido del alumno
+Abre `curso.html?slug=ventadechicha` y comprueba, en este orden:
+
+- [ ] La **lección 1** se reproduce y la **lección 2 sale bloqueada** con un candado.
+- [ ] El medidor de "Visto" sube mientras ves el video.
+- [ ] Arrastrar la barra hasta el final **no** completa la lección (mensaje de aviso).
+- [ ] Al pasar del **90 %** la lección 1 queda completada y **se abre la lección 2**.
+- [ ] Al completar la última lección se habilita **Ir al examen**.
+- [ ] Suspender a propósito (< 80 %) muestra *"Ups, no aprobaste…"* y el botón
+      **Repasar Lección** que te devuelve al video correcto.
+- [ ] Aprobar (≥ 80 %) muestra el certificado y el botón **Descargar en PDF**.
+- [ ] El PDF lleva tu nombre, el curso, el nombre de la academia, la fecha y la firma.
+- [ ] El código del certificado funciona en `verificar.html`.
+
+### 7. Ajustes de la academia
+**Administración → Ajustes**: cambia el nombre de la academia (va en el certificado)
+y, si quieres, la URL de la firma (una imagen PNG con fondo transparente queda mejor).
+
+---
+
 ## Notas de entorno
 
 - **PowerShell 5.1** (no hay PS7). Los `.ps1` necesitan BOM UTF-8 para leerse bien,
@@ -151,3 +277,11 @@ del remoto: viaja en una cabecera temporal durante el push.
 - **Datos de otros proyectos.** Los servidores MCP `supabase` y `supabase-guardian`
   apuntan a **COMARCA** y **GUARDIANKYC**. Este proyecto no los usa ni los modifica:
   el esquema se aplica a mano en el SQL Editor del proyecto de APRENDO LMS.
+- **GitHub Pages y `.nojekyll`.** El archivo `.nojekyll` en la raíz es necesario:
+  sin él, Jekyll ignora la carpeta `_tools/` por empezar con guion bajo.
+- **Herramientas de comprobación** (opcionales):
+  ```powershell
+  node _tools\test-wistia.js                                    # 11 casos del detector de embeds
+  python _tools\check_html.py                                   # estructura HTML y recursos locales
+  Get-ChildItem assets\js -Filter *.js | % { node --check $_.FullName }   # sintaxis JS
+  ```
