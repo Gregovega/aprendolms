@@ -1,0 +1,47 @@
+# ============================================================================
+#  APRENDO LMS — Worker de subdominios por curso
+# ============================================================================
+#  ANTES DE DESPLEGAR, rellena las dos variables de [vars]:
+#    ROOT_DOMAIN   el dominio raiz, SIN www y sin barra final
+#    PAGES_ORIGIN  donde vive el sitio en GitHub Pages, SIN barra final
+#
+#  Luego, desde esta carpeta:
+#    npx wrangler deploy
+# ============================================================================
+
+name = "aprendo-lms-subdominios"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# ---------------------------------------------------------------------------
+#  RUTAS QUE ATIENDE EL WORKER
+#  Descomenta y ajusta cuando el dominio ya esté en tu cuenta de Cloudflare.
+#  El patron con asterisco inicial cubre TODOS los subdominios de un golpe,
+#  asi no hay que anadir una ruta por cada curso nuevo.
+# ---------------------------------------------------------------------------
+# routes = [
+#   { pattern = "*.tudominio.com/*", zone_name = "tudominio.com" },
+#   { pattern = "tudominio.com/*",   zone_name = "tudominio.com" }
+# ]
+
+[vars]
+# El dominio raiz. Ejemplo: "midominio.com"  (sin www, sin https://, sin /)
+ROOT_DOMAIN = "tudominio.com"
+
+# Donde vive el sitio publicado. Ejemplo:
+#   "https://gregovega.github.io/aprendolms"
+# OJO: si es un sitio de usuario (usuario.github.io), el repositorio no aparece
+# en la ruta: seria "https://usuario.github.io".
+PAGES_ORIGIN = "https://gregovega.github.io/aprendolms"
+
+# ---------------------------------------------------------------------------
+#  NOTAS
+#  - NO configures un dominio personalizado en GitHub Pages: Pages validaria la
+#    cabecera Host y redirigiria al visitante fuera del subdominio, rompiendo
+#    justo lo que este Worker consigue.
+#  - El subdominio debe existir en el DNS de Cloudflare. El patron con asterisco
+#    de `routes` ya cubre cualquiera que crees.
+#  - Para ver los subdominios en Cloudflare: DNS -> Add record -> CNAME con
+#    nombre "ventadechicha" apuntando a tu dominio raiz, con el proxy ACTIVADO
+#    (nube naranja). Sin el proxy, la peticion nunca pasa por el Worker.
+# ---------------------------------------------------------------------------

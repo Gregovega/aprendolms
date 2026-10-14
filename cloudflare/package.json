@@ -1,0 +1,15 @@
+{
+  "name": "aprendo-lms-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Worker de Cloudflare que traduce cada subdominio de curso a la pagina del curso. El campo type=module permite que Node lea worker.js y test-routing.mjs como modulos ES.",
+  "type": "module",
+  "scripts": {
+    "test": "node test-routing.mjs",
+    "desplegar": "wrangler deploy",
+    "previsualizar": "wrangler dev"
+  },
+  "devDependencies": {
+    "wrangler": "^3.90.0"
+  }
+}

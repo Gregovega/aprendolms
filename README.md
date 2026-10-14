@@ -13,7 +13,7 @@ se genera en el navegador con jsPDF.
 | Frontend | HTML/CSS/JS estático en GitHub Pages | **Construido** |
 | Video | Wistia (Aurora + Vulcan/E-v1) | Cuenta por crear |
 | Backend | Supabase (auth + progreso + cursos) | **Credenciales verificadas** |
-| Dominio y CDN | Cloudflare | Pendiente |
+| Dominio y CDN | Cloudflare | Worker escrito y probado (22 casos) |
 | Certificado | jsPDF en el navegador | **Construido** |
 
 ### Páginas
@@ -53,7 +53,10 @@ se genera en el navegador con jsPDF.
   página del curso con desbloqueo secuencial y progreso, examen, certificado en PDF
   y verificación pública.
 - **Soporte de las DOS generaciones de Wistia** (ver más abajo: era un problema real).
-- **Pruebas automáticas**: `_tools/test-wistia.js` (11 casos) y `_tools/check_html.py`.
+- **Worker de Cloudflare** para los subdominios por curso, con su lógica de enrutado
+  probada (22 casos).
+- **Pruebas automáticas**: `_tools/check-all.cmd` ejecuta las 6 comprobaciones del
+  proyecto de una vez.
 
 ### ⏳ Pendiente
 
@@ -78,6 +81,11 @@ APRENDO LMS\
 ├─ assets\js\config.js           🌐 público — URL + anon key (lo lee el frontend)
 ├─ supabase\
 │  └─ 001_esquema_inicial.sql    esquema completo con RLS
+├─ cloudflare\
+│  ├─ worker.js                  traduce cada subdominio a su página de curso
+│  ├─ test-routing.mjs           22 pruebas de la lógica de enrutado
+│  ├─ wrangler.toml              configuración de despliegue
+│  └─ package.json               marca la carpeta como módulos ES
 ├─ _tools\
 │  ├─ set-credentials.ps1        motor de activación
 │  ├─ set-credentials.cmd        lanzador (evita el bloqueo de política)
@@ -328,15 +336,47 @@ El prompt pide que cada curso viva en su subdominio (`ventadechicha.tudominio.co
 
 Detalle importante que conviene saber: **GitHub Pages admite un solo dominio
 personalizado por repositorio**, así que no basta con apuntar veinte subdominios al
-mismo sitio. Para que el subdominio funcione hace falta un **Cloudflare Worker** que
-reescriba la petición:
+mismo sitio. Para eso está el Worker, que ya viene escrito y probado.
+
+### El Worker de subdominios (`cloudflare/`)
 
 ```
-ventadechicha.tudominio.com  →  tudominio.com/curso.html?slug=ventadechicha
+ventadechicha.tudominio.com/           →  /curso.html?slug=ventadechicha
+ventadechicha.tudominio.com/assets/…   →  /assets/…        (intacto)
+www.tudominio.com/                     →  /                (el catálogo)
+tudominio.com/                         →  /                (el catálogo)
 ```
 
-Cuando lleguemos a Cloudflare te dejo ese Worker escrito y probado. Mientras tanto,
-los enlaces con `?slug=` funcionan en cualquier hosting y en local.
+**Lo más importante del Worker:** reescribe **solo la raíz** del subdominio. El resto de
+rutas se reenvían intactas. Si reescribiera todo, el navegador pediría
+`/assets/js/curso.js` y recibiría el HTML del curso: la página se vería sin estilos y
+sin funcionar. Ese detalle es el que rompe casi todas las implementaciones de esto.
+
+También tiene en cuenta:
+- El subdominio **manda** sobre `?slug=`, así que nadie puede cambiar de curso por la URL.
+- Los parámetros de seguimiento (`?utm_source=…`) se conservan.
+- `midominio.com.evil.com` **no** se considera un subdominio tuyo.
+- Un subdominio de varios niveles (`a.b.tudominio.com`) no es un curso.
+
+Su lógica vive en una función pura (`decidirRuta`), así que se prueba sin desplegar nada:
+**22 casos, 0 fallos** (`node cloudflare/test-routing.mjs`, incluido en `_tools\check-all.cmd`).
+
+Para desplegarlo:
+
+```powershell
+# 1. Rellena ROOT_DOMAIN y PAGES_ORIGIN en cloudflare/wrangler.toml
+# 2. Desde la carpeta cloudflare:
+npx wrangler deploy
+```
+
+⚠️ **No configures un dominio personalizado en GitHub Pages.** Pages validaría la cabecera
+`Host` y redirigiría al visitante fuera del subdominio, rompiendo justo lo que el Worker
+consigue.
+
+⚠️ En Cloudflare, cada subdominio necesita su registro **CNAME con el proxy activado**
+(la nube naranja). Sin proxy, la petición nunca pasa por el Worker.
+
+Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier hosting y en local.
 
 ---
 

@@ -241,11 +241,9 @@
     var listo = todasCompletadas();
     var btn = $('btn-ir-examen');
     btn.disabled = !listo;
-    btn.textContent = listo ? 'Ir al examen' : 'Ir al examen';
     $('examen-estado').textContent = listo
       ? 'Ya puedes rendir el examen final.'
       : 'Completa todas las lecciones para habilitarlo.';
-    if (listo) $('caja-examen').classList.add('card'); 
   }
 
   /* ============================================================ abrir lección */
