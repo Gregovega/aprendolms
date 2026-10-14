@@ -195,7 +195,8 @@ img, video { max-width: 100%; display: block; }
   font-size: 17px; color: #0A0E17;
   box-shadow: var(--shadow-accent);
 }
-.brand-sub { font-size: .72rem; color: var(--text-faint); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
+/* display:block por el mismo motivo que .lesson-title: en el HTML es un <span>. */
+.brand-sub { display: block; font-size: .72rem; color: var(--text-faint); font-weight: 500; letter-spacing: .04em; text-transform: uppercase; }
 
 .nav-links { display: flex; align-items: center; gap: 2px; }
 .nav-links a {
@@ -496,8 +497,11 @@ img, video { max-width: 100%; display: block; }
 }
 .lesson-item.is-active .lesson-num { background: var(--accent); border-color: var(--accent); color: #0A0E17; }
 .lesson-main { flex: 1 1 auto; min-width: 0; }
-.lesson-title { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lesson-sub { font-size: .78rem; color: var(--text-faint); }
+/* display:block es imprescindible: en el HTML el titulo y el subtitulo son <span>,
+   y un span es un elemento EN LINEA. Sin esto se pintan uno al lado del otro y
+   sale "IntroducciónCompletada" en vez de dos lineas. */
+.lesson-title { display: block; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lesson-sub { display: block; font-size: .78rem; color: var(--text-faint); }
 .lesson-state { flex: none; font-size: .95rem; }
 
 /* ---------------------------------------------------------------- 13. VIDEO */

@@ -80,7 +80,7 @@ def revisar(ruta):
     print(f"  scripts: {len(p.scripts)} ({len([s for s in p.scripts if s.startswith('http')])} por CDN)")
 
 base = r"G:\Documents\a PROYECTOS AUTOMATIZACIONES\APRENDO LMS"
-for nombre in ['index.html', 'curso.html', 'verificar.html', 'admin.html']:
+for nombre in ['index.html', 'curso.html', 'verificar.html', 'admin.html', r'_tools\design-system.html']:
     ruta = os.path.join(base, nombre)
     if os.path.exists(ruta):
         revisar(ruta)

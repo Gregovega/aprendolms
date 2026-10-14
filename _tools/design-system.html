@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Referencia del sistema de diseño · Aprendo LMS</title>
+<link rel="stylesheet" href="../assets/css/design-system.css">
+<style>
+  /* Solo para esta pagina de referencia: menos aire y tres columnas, para que
+     todo el sistema de diseno quepa en una captura. */
+  body { padding: 26px 0 40px; }
+  .ref-seccion { margin-bottom: 26px; }
+  .ref-seccion > h2 {
+    font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 10px; font-family: 'Inter', sans-serif; font-weight: 700;
+  }
+  .ref-fila { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .ref-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  .muestra { background: var(--bg-deep); border: 1px dashed var(--line-strong); border-radius: var(--r-sm); padding: 10px 12px; }
+  .muestra code { font-size: .72rem; }
+</style>
+</head>
+<body>
+
+<div class="container container-wide">
+
+  <div class="row-between mb-4">
+    <div class="brand">
+      <span class="brand-mark">A</span>
+      <span>Academia Aprendo<span class="brand-sub" style="display:block">Sistema de diseño</span></span>
+    </div>
+    <div class="row">
+      <span class="badge">Inter · Outfit</span>
+      <span class="badge badge-accent">#FF6B00</span>
+      <span class="badge">#0A0E17</span>
+      <span class="badge">radio 12px</span>
+    </div>
+  </div>
+
+  <!-- ------------------------------------------------ COLORES -->
+  <section class="ref-seccion">
+    <h2>Paleta</h2>
+    <div class="ref-fila">
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--bg);border:1px solid var(--line)"></div><div class="text-xs text-faint mt-2">bg #0A0E17</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--surface)"></div><div class="text-xs text-faint mt-2">surface #111827</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--surface-2)"></div><div class="text-xs text-faint mt-2">tarjeta #1F2937</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--accent)"></div><div class="text-xs text-faint mt-2">acento #FF6B00</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--gold)"></div><div class="text-xs text-faint mt-2">oro #D4AF37</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--ok)"></div><div class="text-xs text-faint mt-2">ok #22C55E</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--warn)"></div><div class="text-xs text-faint mt-2">aviso #F59E0B</div></div>
+      <div style="width:104px"><div style="height:44px;border-radius:10px;background:var(--danger)"></div><div class="text-xs text-faint mt-2">error #EF4444</div></div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------ BOTONES -->
+  <section class="ref-seccion">
+    <h2>Botones</h2>
+    <div class="ref-fila mb-4">
+      <button class="btn btn-primary">Crear Nuevo Curso</button>
+      <button class="btn btn-secondary">Secundario</button>
+      <button class="btn btn-ghost">Fantasma</button>
+      <button class="btn btn-gold">Descargar certificado</button>
+      <button class="btn btn-danger">Borrar</button>
+      <button class="btn btn-primary" disabled>Deshabilitado</button>
+    </div>
+    <div class="ref-fila">
+      <button class="btn btn-primary btn-sm">Pequeño</button>
+      <button class="btn btn-primary">Normal</button>
+      <button class="btn btn-primary btn-lg">Grande</button>
+      <button class="btn btn-gold btn-xl">&#127942; Extra grande</button>
+      <button class="btn-link">Enlace</button>
+    </div>
+  </section>
+
+  <div class="ref-cols">
+
+    <!-- ------------------------------------------------ columna 1 -->
+    <div>
+
+      <section class="ref-seccion">
+        <h2>Avisos</h2>
+        <div class="stack">
+          <div class="alert alert-ok"><span class="alert-icon">&#10004;</span><div class="alert-body">Lección completada. Se desbloqueó la siguiente.</div></div>
+          <div class="alert alert-warn"><span class="alert-icon">&#9888;</span><div class="alert-body">Ups, no aprobaste. Repasa la lección 2.</div></div>
+          <div class="alert alert-danger"><span class="alert-icon">&#9888;</span><div class="alert-body">Correo o contraseña incorrectos.</div></div>
+          <div class="alert alert-info"><span class="alert-icon">&#8505;</span><div class="alert-body">Necesitas ver el 90% del video.</div></div>
+          <div class="alert alert-accent"><span class="alert-icon">&#9993;</span><div class="alert-body">Te enviamos un enlace de confirmación.</div></div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Etiquetas</h2>
+        <div class="ref-fila">
+          <span class="badge">Neutra</span>
+          <span class="badge badge-accent">Curso</span>
+          <span class="badge badge-ok"><span class="badge-dot"></span>Inscrito</span>
+          <span class="badge badge-warn">Requiere inscripción</span>
+          <span class="badge badge-danger">Bloqueada</span>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Progreso</h2>
+        <div class="progress-label"><span>Tu progreso</span><strong>60%</strong></div>
+        <div class="progress mb-4"><div class="progress-bar" style="width:60%"></div></div>
+        <div class="progress mb-4"><div class="progress-bar is-ok" style="width:100%"></div></div>
+        <div class="ref-fila">
+          <div class="ring" style="--p:35"><span>35%</span></div>
+          <div class="ring is-ok" style="--p:100"><span>100%</span></div>
+          <div class="ring" style="--p:0"><span>0%</span></div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Formularios</h2>
+        <label class="field">
+          <span class="label">Título del Curso <span class="req">*</span></span>
+          <input class="input" value="Venta de Chicha 101">
+        </label>
+        <label class="field">
+          <span class="label">Slug / URL</span>
+          <input class="input" value="ventadechicha">
+          <span class="hint">Define la dirección pública del curso.</span>
+        </label>
+        <label class="field">
+          <span class="label">Código Embed de Wistia</span>
+          <textarea class="textarea" rows="3">&lt;wistia-player media-id="rbsg3da4jd"&gt;&lt;/wistia-player&gt;</textarea>
+        </label>
+        <label class="field">
+          <span class="label">Publicado</span>
+          <span class="check"><input type="checkbox" checked><span>Visible en el catálogo</span></span>
+        </label>
+      </section>
+
+    </div>
+
+    <!-- ------------------------------------------------ columna 2 -->
+    <div>
+
+      <section class="ref-seccion">
+        <h2>Tarjeta de curso</h2>
+        <article class="card card-hover course-card">
+          <div class="course-cover">V</div>
+          <div>
+            <h3 class="card-title">Venta de Chicha 101</h3>
+            <p class="course-desc">Aprende a producir y vender chicha de forma rentable, desde la receta hasta el precio.</p>
+          </div>
+          <div class="row-between" style="margin-top:auto">
+            <span class="card-meta">ventadechicha</span>
+            <span class="badge badge-ok"><span class="badge-dot"></span>Inscrito</span>
+          </div>
+          <a class="btn btn-primary btn-block" href="#">Continuar</a>
+        </article>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Estadísticas</h2>
+        <div class="grid grid-3">
+          <div class="stat"><div class="stat-value">12</div><div class="stat-label">Cursos</div></div>
+          <div class="stat"><div class="stat-value">148</div><div class="stat-label">Lecciones</div></div>
+          <div class="stat"><div class="stat-value">37</div><div class="stat-label">Alumnos</div></div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Lista de lecciones</h2>
+        <div class="lesson-list">
+          <button class="lesson-item is-done"><span class="lesson-num">1</span><span class="lesson-main"><span class="lesson-title">Introducción</span><span class="lesson-sub">Completada</span></span><span class="lesson-state">&#10004;</span></button>
+          <button class="lesson-item is-active"><span class="lesson-num">2</span><span class="lesson-main"><span class="lesson-title">La receta base</span><span class="lesson-sub">Vista al 46%</span></span><span class="lesson-state">&#9654;</span></button>
+          <button class="lesson-item"><span class="lesson-num">3</span><span class="lesson-main"><span class="lesson-title">Costos y precio</span><span class="lesson-sub">Sin empezar</span></span><span class="lesson-state">&#9654;</span></button>
+          <button class="lesson-item is-locked" disabled><span class="lesson-num">4</span><span class="lesson-main"><span class="lesson-title">Venta y distribución</span><span class="lesson-sub">Bloqueada</span></span><span class="lesson-state">&#128274;</span></button>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Tabla</h2>
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Alumno</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr><td>María Pérez</td><td><span class="badge badge-ok">activa</span></td></tr>
+              <tr><td>José Rangel</td><td><span class="badge badge-ok">activa</span></td></tr>
+              <tr><td>Luis Mora</td><td><span class="badge badge-warn">pausada</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Estados vacíos y de carga</h2>
+        <div class="ref-fila">
+          <div class="spinner"></div>
+          <div class="spinner spinner-lg"></div>
+          <div class="muestra" style="flex:1"><code>spinner</code></div>
+        </div>
+        <div class="empty-state mt-4" style="padding:26px 12px">
+          <div class="empty-state-icon">&#128218;</div>
+          <strong>Todavía no hay cursos publicados</strong>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ------------------------------------------------ columna 3 -->
+    <div>
+
+      <section class="ref-seccion">
+        <h2>Examen</h2>
+        <div class="quiz-q" style="padding:16px">
+          <div class="quiz-q-head"><div class="quiz-q-num">1</div><div class="quiz-q-text">¿Cuál es el punto ideal de fermentación?</div></div>
+          <label class="quiz-opt is-picked"><input type="radio" name="d1" checked><span class="quiz-opt-key">A</span><span>Entre 24 y 48 horas</span></label>
+          <label class="quiz-opt is-right"><input type="radio" name="d1"><span class="quiz-opt-key">B</span><span>Entre 3 y 5 días</span></label>
+          <label class="quiz-opt is-wrong"><input type="radio" name="d1"><span class="quiz-opt-key">C</span><span>Más de una semana</span></label>
+          <label class="quiz-opt"><input type="radio" name="d1"><span class="quiz-opt-key">D</span><span>No fermenta</span></label>
+        </div>
+        <div class="card card-inset" style="padding:18px;text-align:center">
+          <div class="text-muted text-sm">No aprobado</div>
+          <div class="score-value fail">60%</div>
+          <div class="text-muted text-sm">6 de 10 respuestas correctas</div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Vista previa del certificado</h2>
+        <div class="cert-frame"><div class="cert-preview">
+          <div class="cp-kicker">Certificado de finalización</div>
+          <div class="cp-title">Se otorga el presente certificado a</div>
+          <div class="cp-name">María Alejandra Pérez</div>
+          <div class="cp-course">por haber completado el curso<br><strong>Venta de Chicha 101</strong></div>
+          <div class="cp-foot">
+            <div><div class="cp-line">Academia Aprendo</div>Institución</div>
+            <div><div class="cp-line">14 de octubre de 2026</div>Fecha</div>
+          </div>
+        </div></div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Drawer (panel deslizante)</h2>
+        <div class="muestra">
+          <div style="position:relative;height:190px;overflow:hidden;border-radius:8px;background:var(--bg)">
+            <div class="drawer open" style="position:absolute;width:100%;box-shadow:none;border-left:none">
+              <div class="drawer-header"><h2 style="font-size:1rem">Crear Nuevo Curso</h2><button class="drawer-close">&times;</button></div>
+              <div class="drawer-body" style="padding:14px">
+                <label class="field" style="margin-bottom:10px"><span class="label">Título del Curso</span><input class="input" value="Venta de Chicha 101"></label>
+                <label class="field" style="margin-bottom:0"><span class="label">Slug / URL</span><input class="input" value="ventadechicha"></label>
+              </div>
+              <div class="drawer-footer" style="padding:10px 14px"><button class="btn btn-ghost btn-sm">Cancelar</button><button class="btn btn-primary btn-sm">Guardar</button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Tarjetas base</h2>
+        <div class="stack">
+          <div class="card card-pad-sm"><div class="card-title">Tarjeta normal</div><div class="card-meta">Superficie #1F2937, radio 12px</div></div>
+          <div class="card card-flat card-pad-sm"><div class="card-title">Tarjeta plana</div><div class="card-meta">Sin sombra</div></div>
+          <div class="card card-inset card-pad-sm"><div class="card-title">Tarjeta hundida</div><div class="card-meta">Fondo más profundo</div></div>
+        </div>
+      </section>
+
+      <section class="ref-seccion">
+        <h2>Tipografía</h2>
+        <h1 style="font-size:2rem">Título Outfit</h1>
+        <h2 style="font-size:1.4rem">Subtítulo</h2>
+        <p class="mb-2">Texto de párrafo en Inter, el color <span class="text-muted">atenuado</span> y <span class="text-accent">acento</span>.</p>
+        <p class="text-sm text-faint mb-0">Texto pequeño y muy atenuado.</p>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
