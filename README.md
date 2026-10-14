@@ -422,3 +422,45 @@ Mientras no tengas dominio, los enlaces con `?slug=` funcionan en cualquier host
   abrir esa pantalla. El comprobador cruza las consultas del cliente con las claves del
   esquema y lo detecta en segundos. Está validado: se probó quitando la clave foránea y
   efectivamente da error.
+
+---
+
+## Revisar el aspecto visual
+
+Ninguna de las 7 comprobaciones anteriores mira cómo se ve la interfaz. Para eso hay dos vías.
+
+### 1. La página de referencia del diseño
+
+`_tools/design-system.html` ejercita **todo** el sistema de diseño en una sola página:
+paleta, botones, avisos, etiquetas, barras y anillos de progreso, formularios, tarjeta de
+curso, estadísticas, lista de lecciones con sus cuatro estados, tabla, examen con opciones
+acertadas y falladas, vista previa del certificado, drawer y tarjetas.
+
+**No necesita Supabase ni internet**, así que se puede abrir en cualquier momento:
+
+```powershell
+.\_tools\serve.cmd -AbrirNavegador
+# y luego entra en  http://localhost:8080/_tools/design-system.html
+```
+
+Sirve también de contrato visual: si cambias el sistema de diseño, aquí se ve el efecto en
+todos los componentes a la vez.
+
+### 2. Capturar la pantalla sin abrir el navegador
+
+Chrome y Edge traen modo headless con captura. Con el servidor local levantado:
+
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --headless=new --disable-gpu --hide-scrollbars `
+  --window-size=1500,3400 --screenshot="captura.png" `
+  "http://localhost:8080/_tools/design-system.html"
+```
+
+Esto es lo que permitió encontrar un fallo que **ninguna comprobación automática podía ver**:
+`.lesson-title` y `.lesson-sub` son `<span>` —elementos en línea— así que en la lista de
+lecciones se pintaban uno al lado del otro y salía *"IntroducciónCompletada"* en vez de dos
+líneas. Se corrigió con `display: block`.
+
+> Nota: si lanzas Chrome desde dentro de un entorno restringido, puede necesitar permisos
+> ampliados para crear sus procesos auxiliares. Desde tu terminal normal no hace falta nada.
